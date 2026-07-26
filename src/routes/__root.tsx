@@ -87,7 +87,7 @@ const jsonLd = {
     "latitude": "28.3800",
     "longitude": "77.3500"
   },
-  "url": "https://therosebygeetanjli.com"
+  "url": "https://the-rose-delta.vercel.app"
 };
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
@@ -102,12 +102,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "The Rose by Geetanjli | Fresh Flower Bouquets & Delivery in Faridabad" },
       { property: "og:description", content: "Order fresh flower bouquets & luxury rose arrangements with fast delivery in Faridabad from The Rose by Geetanjli." },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://therosebygeetanjli.com" },
-      { property: "og:image", content: "https://therosebygeetanjli.com/favicon.ico" },
+      { property: "og:url", content: "https://the-rose-delta.vercel.app" },
+      { property: "og:image", content: "https://the-rose-delta.vercel.app/favicon.ico" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "The Rose by Geetanjli | Fresh Flower Bouquets & Delivery in Faridabad" },
       { name: "twitter:description", content: "Order fresh flower bouquets & luxury rose arrangements with fast delivery in Faridabad from The Rose by Geetanjli." },
-      { name: "twitter:image", content: "https://therosebygeetanjli.com/favicon.ico" },
+      { name: "twitter:image", content: "https://the-rose-delta.vercel.app/favicon.ico" },
     ],
     scripts: [
       {

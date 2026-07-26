@@ -3,4 +3,4 @@ Allow: /
 Disallow: /auth
 Disallow: /my-bouquets
 
-Sitemap: https://therosebygeetanjli.com/sitemap.xml
+Sitemap: https://the-rose-delta.vercel.app/sitemap.xml
