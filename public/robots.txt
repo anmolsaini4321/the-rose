@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /auth
+Disallow: /my-bouquets
+
+Sitemap: https://therosebygeetanjli.com/sitemap.xml
