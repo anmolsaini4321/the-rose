@@ -94,6 +94,33 @@ export type Database = {
         }
         Relationships: []
       }
+      carts: {
+        Row: {
+          id: string
+          user_id: string
+          product_id: string
+          quantity: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          product_id: string
+          quantity: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          product_id?: string
+          quantity?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -117,6 +144,254 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          user_id: string
+          role: "super_admin" | "admin" | "user"
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          role: "super_admin" | "admin" | "user"
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          role?: "super_admin" | "admin" | "user"
+          created_at?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          id: string
+          title: string
+          slug: string
+          description: string
+          short_description: string | null
+          price: number
+          original_price: number | null
+          flowers_included: string[]
+          category: string
+          tags: string[]
+          images: string[]
+          thumbnail: string | null
+          is_published: boolean
+          is_featured: boolean
+          stock_count: number
+          created_by: string
+          created_at: string
+          updated_at: string
+          meta_title: string | null
+          meta_description: string | null
+          average_rating: number
+          review_count: number
+        }
+        Insert: {
+          id?: string
+          title: string
+          slug: string
+          description: string
+          short_description?: string | null
+          price: number
+          original_price?: number | null
+          flowers_included?: string[]
+          category?: string
+          tags?: string[]
+          images?: string[]
+          thumbnail?: string | null
+          is_published?: boolean
+          is_featured?: boolean
+          stock_count?: number
+          created_by: string
+          created_at?: string
+          updated_at?: string
+          meta_title?: string | null
+          meta_description?: string | null
+          average_rating?: number
+          review_count?: number
+        }
+        Update: {
+          id?: string
+          title?: string
+          slug?: string
+          description?: string
+          short_description?: string | null
+          price?: number
+          original_price?: number | null
+          flowers_included?: string[]
+          category?: string
+          tags?: string[]
+          images?: string[]
+          thumbnail?: string | null
+          is_published?: boolean
+          is_featured?: boolean
+          stock_count?: number
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+          meta_title?: string | null
+          meta_description?: string | null
+          average_rating?: number
+          review_count?: number
+        }
+        Relationships: []
+      }
+      reviews: {
+        Row: {
+          id: string
+          product_id: string
+          user_id: string
+          rating: number
+          title: string | null
+          body: string
+          is_approved: boolean
+          is_removed: boolean
+          removed_by: string | null
+          removed_reason: string | null
+          created_at: string
+          updated_at: string
+          profiles?: { display_name: string | null; avatar_url: string | null } | null
+        }
+        Insert: {
+          id?: string
+          product_id: string
+          user_id: string
+          rating: number
+          title?: string | null
+          body: string
+          is_approved?: boolean
+          is_removed?: boolean
+          removed_by?: string | null
+          removed_reason?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          product_id?: string
+          user_id?: string
+          rating?: number
+          title?: string | null
+          body?: string
+          is_approved?: boolean
+          is_removed?: boolean
+          removed_by?: string | null
+          removed_reason?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          id: string
+          user_id: string
+          status: "pending" | "paid" | "processing" | "shipped" | "delivered" | "cancelled" | "refunded"
+          total_amount: number
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          razorpay_signature: string | null
+          shipping_name: string
+          shipping_phone: string
+          shipping_address: string
+          shipping_city: string
+          shipping_pincode: string
+          notes: string | null
+          created_at: string
+          updated_at: string
+          profiles?: { display_name: string | null } | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          status?: "pending" | "paid" | "processing" | "shipped" | "delivered" | "cancelled" | "refunded"
+          total_amount: number
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          shipping_name: string
+          shipping_phone: string
+          shipping_address: string
+          shipping_city: string
+          shipping_pincode: string
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          status?: "pending" | "paid" | "processing" | "shipped" | "delivered" | "cancelled" | "refunded"
+          total_amount?: number
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          shipping_name?: string
+          shipping_phone?: string
+          shipping_address?: string
+          shipping_city?: string
+          shipping_pincode?: string
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          id: string
+          order_id: string
+          product_id: string
+          quantity: number
+          unit_price: number
+          created_at: string
+          products?: { title: string; thumbnail: string | null } | null
+        }
+        Insert: {
+          id?: string
+          order_id: string
+          product_id: string
+          quantity: number
+          unit_price: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          order_id?: string
+          product_id?: string
+          quantity?: number
+          unit_price?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -148,9 +423,7 @@ export type Tables<
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
@@ -176,9 +449,7 @@ export type TablesInsert<
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
@@ -201,9 +472,7 @@ export type TablesUpdate<
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
@@ -216,43 +485,3 @@ export type TablesUpdate<
       ? U
       : never
     : never
-
-export type Enums<
-  DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
-> = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
-
-export type CompositeTypes<
-  PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
-> = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
-
-export const Constants = {
-  public: {
-    Enums: {},
-  },
-} as const

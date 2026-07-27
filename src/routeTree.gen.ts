@@ -10,14 +10,26 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BuilderRouteImport } from './routes/builder'
+import { Route as CartRouteImport } from './routes/cart'
 import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as MyBouquetsRouteImport } from './routes/my-bouquets'
+import { Route as OrdersRouteImport } from './routes/orders'
+import { Route as ShopRouteImport } from './routes/shop'
+import { Route as UploadRouteImport } from './routes/upload'
+import { Route as ProductProductIdRouteImport } from './routes/product.$productId'
+import { Route as ShopProductIdRouteImport } from './routes/shop/$productId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -30,6 +42,11 @@ const BuilderRoute = BuilderRouteImport.update({
   path: '/builder',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CartRoute = CartRouteImport.update({
+  id: '/cart',
+  path: '/cart',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GalleryRoute = GalleryRouteImport.update({
   id: '/gallery',
   path: '/gallery',
@@ -40,43 +57,132 @@ const MyBouquetsRoute = MyBouquetsRouteImport.update({
   path: '/my-bouquets',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrdersRoute = OrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShopRoute = ShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UploadRoute = UploadRouteImport.update({
+  id: '/upload',
+  path: '/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductProductIdRoute = ProductProductIdRouteImport.update({
+  id: '/product/$productId',
+  path: '/product/$productId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShopProductIdRoute = ShopProductIdRouteImport.update({
+  id: '/$productId',
+  path: '/$productId',
+  getParentRoute: () => ShopRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/builder': typeof BuilderRoute
+  '/cart': typeof CartRoute
   '/gallery': typeof GalleryRoute
   '/my-bouquets': typeof MyBouquetsRoute
+  '/orders': typeof OrdersRoute
+  '/shop': typeof ShopRouteWithChildren
+  '/upload': typeof UploadRoute
+  '/product/$productId': typeof ProductProductIdRoute
+  '/shop/$productId': typeof ShopProductIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/builder': typeof BuilderRoute
+  '/cart': typeof CartRoute
   '/gallery': typeof GalleryRoute
   '/my-bouquets': typeof MyBouquetsRoute
+  '/orders': typeof OrdersRoute
+  '/shop': typeof ShopRouteWithChildren
+  '/upload': typeof UploadRoute
+  '/product/$productId': typeof ProductProductIdRoute
+  '/shop/$productId': typeof ShopProductIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/builder': typeof BuilderRoute
+  '/cart': typeof CartRoute
   '/gallery': typeof GalleryRoute
   '/my-bouquets': typeof MyBouquetsRoute
+  '/orders': typeof OrdersRoute
+  '/shop': typeof ShopRouteWithChildren
+  '/upload': typeof UploadRoute
+  '/product/$productId': typeof ProductProductIdRoute
+  '/shop/$productId': typeof ShopProductIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/builder' | '/gallery' | '/my-bouquets'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/builder'
+    | '/cart'
+    | '/gallery'
+    | '/my-bouquets'
+    | '/orders'
+    | '/shop'
+    | '/upload'
+    | '/product/$productId'
+    | '/shop/$productId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/builder' | '/gallery' | '/my-bouquets'
-  id: '__root__' | '/' | '/auth' | '/builder' | '/gallery' | '/my-bouquets'
+  to:
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/builder'
+    | '/cart'
+    | '/gallery'
+    | '/my-bouquets'
+    | '/orders'
+    | '/shop'
+    | '/upload'
+    | '/product/$productId'
+    | '/shop/$productId'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/builder'
+    | '/cart'
+    | '/gallery'
+    | '/my-bouquets'
+    | '/orders'
+    | '/shop'
+    | '/upload'
+    | '/product/$productId'
+    | '/shop/$productId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   BuilderRoute: typeof BuilderRoute
+  CartRoute: typeof CartRoute
   GalleryRoute: typeof GalleryRoute
   MyBouquetsRoute: typeof MyBouquetsRoute
+  OrdersRoute: typeof OrdersRoute
+  ShopRoute: typeof ShopRouteWithChildren
+  UploadRoute: typeof UploadRoute
+  ProductProductIdRoute: typeof ProductProductIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -86,6 +192,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -102,6 +215,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BuilderRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cart': {
+      id: '/cart'
+      path: '/cart'
+      fullPath: '/cart'
+      preLoaderRoute: typeof CartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/gallery': {
       id: '/gallery'
       path: '/gallery'
@@ -116,15 +236,66 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MyBouquetsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/orders': {
+      id: '/orders'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof OrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shop': {
+      id: '/shop'
+      path: '/shop'
+      fullPath: '/shop'
+      preLoaderRoute: typeof ShopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/upload': {
+      id: '/upload'
+      path: '/upload'
+      fullPath: '/upload'
+      preLoaderRoute: typeof UploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/product/$productId': {
+      id: '/product/$productId'
+      path: '/product/$productId'
+      fullPath: '/product/$productId'
+      preLoaderRoute: typeof ProductProductIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shop/$productId': {
+      id: '/shop/$productId'
+      path: '/$productId'
+      fullPath: '/shop/$productId'
+      preLoaderRoute: typeof ShopProductIdRouteImport
+      parentRoute: typeof ShopRoute
+    }
   }
 }
 
+interface ShopRouteChildren {
+  ShopProductIdRoute: typeof ShopProductIdRoute
+}
+
+const ShopRouteChildren: ShopRouteChildren = {
+  ShopProductIdRoute: ShopProductIdRoute,
+}
+
+const ShopRouteWithChildren = ShopRoute._addFileChildren(ShopRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   BuilderRoute: BuilderRoute,
+  CartRoute: CartRoute,
   GalleryRoute: GalleryRoute,
   MyBouquetsRoute: MyBouquetsRoute,
+  OrdersRoute: OrdersRoute,
+  ShopRoute: ShopRouteWithChildren,
+  UploadRoute: UploadRoute,
+  ProductProductIdRoute: ProductProductIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
