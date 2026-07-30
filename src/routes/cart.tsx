@@ -200,6 +200,17 @@ function Cart() {
       const gst = Math.round(subtotal * 0.05 * 100) / 100;
       const computedTotal = Math.round((subtotal + gst) * 100) / 100;
 
+      // 1. Clean up any previous stale pending orders for this user to 'failed'
+      try {
+        await supabase
+          .from("orders")
+          .update({ status: "failed" as any })
+          .eq("user_id", user.id)
+          .eq("status", "pending");
+      } catch (e) {
+        // Ignore background cleanup error
+      }
+
       // 2. Try RPC for secure order creation
       const { data: rpcData, error: orderErr } = await (supabase as any).rpc(
         "create_order_secure",
@@ -285,7 +296,7 @@ function Cart() {
         return;
       }
 
-      // 3. Open Razorpay with server-validated amount (already includes GST)
+      // 4. Open Razorpay with server-validated amount (already includes GST)
       const isRazorpayServerOrder = orderId.startsWith("order_");
 
       const options: RazorpayOptions = {
@@ -352,9 +363,9 @@ function Cart() {
           ondismiss: async () => {
             await supabase
               .from("orders")
-              .update({ status: "cancelled" as any })
+              .update({ status: "failed" as any })
               .eq("id", orderId);
-            toast.info("Payment cancelled");
+            toast.error("Payment failed or cancelled");
             setProcessing(false);
           },
         },
@@ -363,6 +374,12 @@ function Cart() {
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (err) {
+      if (orderId) {
+        await supabase
+          .from("orders")
+          .update({ status: "failed" as any })
+          .eq("id", orderId);
+      }
       console.error("Razorpay error:", err);
       toast.error("Payment failed. Please try again.");
       setProcessing(false);

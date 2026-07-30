@@ -423,11 +423,12 @@ function AdminPanel() {
   };
 
   const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
-    pending: ["paid", "cancelled"],
-    paid: ["processing", "refunded"],
-    processing: ["shipped", "cancelled"],
-    shipped: ["delivered"],
-    delivered: [],
+    pending: ["cancelled", "failed"],
+    failed: ["cancelled"],
+    paid: ["processing", "refunded", "cancelled"],
+    processing: ["shipped", "refunded", "cancelled"],
+    shipped: ["delivered", "refunded"],
+    delivered: ["refunded"],
     cancelled: [],
     refunded: [],
   };
@@ -729,25 +730,32 @@ function AdminPanel() {
                         ₹{Number(o.total_amount).toLocaleString("en-IN")}
                       </td>
                       <td className="p-4">
-                        <select
-                          value={o.status}
-                          onChange={(e) => updateOrderStatus(o.id, e.target.value)}
-                          className="text-eyebrow px-3 py-1 bg-cream border border-border focus:outline-none focus:border-primary"
-                        >
-                          {[
-                            "pending",
-                            "paid",
-                            "processing",
-                            "shipped",
-                            "delivered",
-                            "cancelled",
-                            "refunded",
-                          ].map((s) => (
-                            <option key={s} value={s}>
-                              {s.charAt(0).toUpperCase() + s.slice(1)}
-                            </option>
-                          ))}
-                        </select>
+                        {o.status === "pending" ? (
+                          <span className="inline-block text-xs font-semibold px-3 py-1 bg-amber-100 text-amber-900 rounded-full border border-amber-300">
+                            Pending Payment
+                          </span>
+                        ) : o.status === "failed" ? (
+                          <span className="inline-block text-xs font-semibold px-3 py-1 bg-red-100 text-red-900 rounded-full border border-red-300">
+                            Payment Failed
+                          </span>
+                        ) : (
+                          <select
+                            value={o.status}
+                            onChange={(e) => updateOrderStatus(o.id, e.target.value)}
+                            className="text-eyebrow px-3 py-1 bg-cream border border-border focus:outline-none focus:border-primary"
+                          >
+                            {[
+                              o.status,
+                              ...(VALID_STATUS_TRANSITIONS[o.status] || []),
+                            ]
+                              .filter((v, idx, arr) => arr.indexOf(v) === idx)
+                              .map((s) => (
+                                <option key={s} value={s}>
+                                  {s === "paid" ? "Paid (Gateway Verified)" : s.charAt(0).toUpperCase() + s.slice(1)}
+                                </option>
+                              ))}
+                          </select>
+                        )}
                       </td>
                       <td className="p-4 text-eyebrow opacity-50">
                         {new Date(o.created_at).toLocaleDateString("en-IN")}

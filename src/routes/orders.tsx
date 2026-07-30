@@ -29,7 +29,8 @@ type Order = {
 
 const STATUS_STYLES: Record<string, { label: string; bg: string; color: string }> = {
   pending: { label: "Pending", bg: "var(--champagne)", color: "var(--ink)" },
-  paid: { label: "Paid", bg: "oklch(0.45 0.12 145)", color: "var(--ivory)" },
+  paid: { label: "Payment Completed", bg: "oklch(0.45 0.12 145)", color: "var(--ivory)" },
+  failed: { label: "Payment Failed", bg: "oklch(0.45 0.18 25)", color: "var(--ivory)" },
   processing: { label: "Processing", bg: "oklch(0.6 0.12 200)", color: "var(--ivory)" },
   shipped: { label: "Shipped", bg: "oklch(0.5 0.1 240)", color: "var(--ivory)" },
   delivered: { label: "Delivered", bg: "oklch(0.38 0.08 155)", color: "var(--ivory)" },
