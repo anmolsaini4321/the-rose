@@ -1,9 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { SiteNav, FloatingActions } from "@/components/SiteNav";
+import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { supabase } from "@/integrations/supabase/client";
-import { requireAuth } from "@/lib/auth-guard";
+import { requireAuth, checkAuthRoute } from "@/lib/auth-guard";
 import { Package, ChevronDown, ChevronUp } from "lucide-react";
 
 type OrderItem = {
@@ -28,16 +28,19 @@ type Order = {
 };
 
 const STATUS_STYLES: Record<string, { label: string; bg: string; color: string }> = {
-  pending:    { label: "Pending",    bg: "var(--champagne)", color: "var(--ink)" },
-  paid:       { label: "Paid",       bg: "oklch(0.45 0.12 145)", color: "var(--ivory)" },
+  pending: { label: "Pending", bg: "var(--champagne)", color: "var(--ink)" },
+  paid: { label: "Paid", bg: "oklch(0.45 0.12 145)", color: "var(--ivory)" },
   processing: { label: "Processing", bg: "oklch(0.6 0.12 200)", color: "var(--ivory)" },
-  shipped:    { label: "Shipped",    bg: "oklch(0.5 0.1 240)", color: "var(--ivory)" },
-  delivered:  { label: "Delivered",  bg: "oklch(0.38 0.08 155)", color: "var(--ivory)" },
-  cancelled:  { label: "Cancelled",  bg: "oklch(0.5 0.18 25)", color: "var(--ivory)" },
-  refunded:   { label: "Refunded",   bg: "var(--gold)", color: "var(--forest)" },
+  shipped: { label: "Shipped", bg: "oklch(0.5 0.1 240)", color: "var(--ivory)" },
+  delivered: { label: "Delivered", bg: "oklch(0.38 0.08 155)", color: "var(--ivory)" },
+  cancelled: { label: "Cancelled", bg: "oklch(0.5 0.18 25)", color: "var(--ivory)" },
+  refunded: { label: "Refunded", bg: "var(--gold)", color: "var(--forest)" },
 };
 
 export const Route = createFileRoute("/orders")({
+  beforeLoad: async ({ location }) => {
+    await checkAuthRoute(location.pathname);
+  },
   head: () => ({
     meta: [
       { title: "My Orders — The Rose by Geetanjli" },
@@ -58,17 +61,26 @@ function Orders() {
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
-      if (!u.user) { setSignedIn(false); return; }
+      if (!u.user) {
+        setSignedIn(false);
+        return;
+      }
       setSignedIn(true);
       setLoading(true);
 
       const { data } = await supabase
         .from("orders")
-        .select("id,status,total_amount,shipping_name,shipping_address,shipping_city,shipping_pincode,razorpay_payment_id,created_at")
+        .select(
+          "id,status,total_amount,shipping_name,shipping_address,shipping_city,shipping_pincode,razorpay_payment_id,created_at",
+        )
         .eq("user_id", u.user.id)
         .order("created_at", { ascending: false });
 
-      if (!data) { setOrders([]); setLoading(false); return; }
+      if (!data) {
+        setOrders([]);
+        setLoading(false);
+        return;
+      }
 
       // Load items for each order
       const ordersWithItems: Order[] = await Promise.all(
@@ -78,7 +90,7 @@ function Orders() {
             .select("id,product_id,quantity,unit_price,products(title,thumbnail)")
             .eq("order_id", o.id);
           return { ...o, order_items: (items as unknown as OrderItem[]) ?? [] };
-        })
+        }),
       );
       setOrders(ordersWithItems);
       setLoading(false);
@@ -88,7 +100,11 @@ function Orders() {
   const toggleExpand = (id: string) => {
     setExpanded((s) => {
       const n = new Set(s);
-      n.has(id) ? n.delete(id) : n.add(id);
+      if (n.has(id)) {
+        n.delete(id);
+      } else {
+        n.add(id);
+      }
       return n;
     });
   };
@@ -113,7 +129,9 @@ function Orders() {
           <p className="text-eyebrow text-primary/60">Private</p>
           <h1 className="text-display text-5xl mt-6">Please sign in.</h1>
           <div className="mt-8">
-            <Link to="/auth" className="btn-royal btn-royal-hover">Sign In</Link>
+            <Link to="/auth" className="btn-royal btn-royal-hover">
+              Sign In
+            </Link>
           </div>
         </div>
         <SiteFooter />
@@ -124,7 +142,6 @@ function Orders() {
   return (
     <div className="min-h-screen bg-cream">
       <SiteNav />
-      <FloatingActions />
 
       <div className="pt-32 pb-20 px-6 lg:px-12 mx-auto max-w-[1200px]">
         <p className="text-eyebrow text-primary/60">Order History</p>
@@ -176,13 +193,20 @@ function Orders() {
                         </p>
                         <p className="text-eyebrow opacity-50 mt-1">
                           {new Date(o.created_at).toLocaleDateString("en-IN", {
-                            weekday: "short", year: "numeric", month: "short", day: "numeric",
+                            weekday: "short",
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
                           })}
                         </p>
                       </div>
                       <div className="flex items-center gap-3">
                         <p className="text-sm opacity-70">{o.shipping_city}</p>
-                        {isOpen ? <ChevronUp size={16} className="opacity-40" /> : <ChevronDown size={16} className="opacity-40" />}
+                        {isOpen ? (
+                          <ChevronUp size={16} className="opacity-40" />
+                        ) : (
+                          <ChevronDown size={16} className="opacity-40" />
+                        )}
                       </div>
                     </div>
 
@@ -194,17 +218,29 @@ function Orders() {
                             <div className="space-y-3">
                               {o.order_items?.map((item) => (
                                 <div key={item.id} className="flex gap-3 items-center">
-                                  <div className="w-14 h-14 border border-border shrink-0 overflow-hidden" style={{ background: "var(--champagne)" }}>
+                                  <div
+                                    className="w-14 h-14 border border-border shrink-0 overflow-hidden"
+                                    style={{ background: "var(--champagne)" }}
+                                  >
                                     {item.products?.thumbnail ? (
-                                      <img src={item.products.thumbnail} alt={item.products.title} className="w-full h-full object-cover" />
+                                      <img
+                                        src={item.products.thumbnail}
+                                        alt={item.products?.title || "Product"}
+                                        className="w-full h-full object-cover"
+                                      />
                                     ) : (
-                                      <div className="w-full h-full flex items-center justify-center text-xl opacity-30">🌹</div>
+                                      <div className="w-full h-full flex items-center justify-center text-xl opacity-30">
+                                        🌹
+                                      </div>
                                     )}
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="font-display leading-tight">{item.products?.title ?? "Bouquet"}</p>
+                                    <p className="font-display leading-tight">
+                                      {item.products?.title ?? "Bouquet"}
+                                    </p>
                                     <p className="text-eyebrow opacity-50 mt-1">
-                                      {item.quantity} × ₹{Number(item.unit_price).toLocaleString("en-IN")}
+                                      {item.quantity} × ₹
+                                      {Number(item.unit_price).toLocaleString("en-IN")}
                                     </p>
                                   </div>
                                   <p className="font-display shrink-0">
@@ -220,12 +256,16 @@ function Orders() {
                             <div className="text-sm space-y-1 opacity-80">
                               <p className="font-display text-lg">{o.shipping_name}</p>
                               <p>{o.shipping_address}</p>
-                              <p>{o.shipping_city} — {o.shipping_pincode}</p>
+                              <p>
+                                {o.shipping_city} — {o.shipping_pincode}
+                              </p>
                             </div>
                             {o.razorpay_payment_id && (
                               <div className="mt-4">
                                 <p className="text-eyebrow opacity-60">Payment ID</p>
-                                <p className="text-sm opacity-60 font-mono mt-1">{o.razorpay_payment_id}</p>
+                                <p className="text-sm opacity-60 font-mono mt-1">
+                                  {o.razorpay_payment_id}
+                                </p>
                               </div>
                             )}
                           </div>

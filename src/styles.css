@@ -83,7 +83,11 @@
 
   --shadow-elegant: 0 30px 80px -40px color-mix(in oklab, var(--forest) 30%, transparent);
   --shadow-soft: 0 20px 60px -30px color-mix(in oklab, var(--ink) 20%, transparent);
-  --gradient-veil: linear-gradient(180deg, transparent 0%, color-mix(in oklab, var(--ink) 50%, transparent) 100%);
+  --gradient-veil: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in oklab, var(--ink) 50%, transparent) 100%
+  );
 }
 
 .dark {
@@ -100,8 +104,12 @@
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
-  html { scroll-behavior: smooth; }
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
@@ -110,12 +118,19 @@
     letter-spacing: 0.01em;
     -webkit-font-smoothing: antialiased;
   }
-  h1, h2, h3, h4, .font-display {
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-display {
     font-family: var(--font-serif);
     font-weight: 400;
     letter-spacing: -0.01em;
   }
-  ::selection { background: var(--forest); color: var(--ivory); }
+  ::selection {
+    background: var(--forest);
+    color: var(--ivory);
+  }
 }
 
 @utility hairline {
@@ -177,23 +192,87 @@
 }
 
 @keyframes petal-fall {
-  0% { transform: translate3d(0, -10vh, 0) rotate(0deg); opacity: 0; }
-  10% { opacity: 0.9; }
-  100% { transform: translate3d(20px, 110vh, 0) rotate(360deg); opacity: 0; }
+  0% {
+    transform: translate3d(0, -10vh, 0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate3d(20px, 110vh, 0) rotate(360deg);
+    opacity: 0;
+  }
 }
 @keyframes reveal-up {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @keyframes slow-zoom {
-  from { transform: scale(1.05); }
-  to { transform: scale(1.15); }
+  from {
+    transform: scale(1.05);
+  }
+  to {
+    transform: scale(1.15);
+  }
 }
 @keyframes shimmer {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
-.animate-reveal { animation: reveal-up 1.2s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.animate-slow-zoom { animation: slow-zoom 20s ease-out infinite alternate; }
-.animate-petal { animation: petal-fall 12s linear infinite; }
+.animate-reveal {
+  animation: reveal-up 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-slow-zoom {
+  animation: slow-zoom 20s ease-out infinite alternate;
+}
+.animate-petal {
+  animation: petal-fall 12s linear infinite;
+}
+
+/* Toast popup dismissal progress animation */
+[data-sonner-toast] {
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+[data-sonner-toast]::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  background: var(--forest);
+  animation: toast-progress 4s linear forwards;
+  pointer-events: none;
+}
+
+[data-sonner-toast][data-type="error"]::after {
+  background: var(--burgundy);
+}
+
+[data-sonner-toast][data-type="success"]::after {
+  background: var(--emerald-deep);
+}
+
+@keyframes toast-progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}

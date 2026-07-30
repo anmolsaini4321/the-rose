@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { SiteNav, FloatingActions } from "@/components/SiteNav";
+import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { supabase } from "@/integrations/supabase/client";
 import { addToCart } from "@/lib/cart-store";
@@ -39,7 +39,6 @@ export const Route = createFileRoute("/shop/$productId")({
   component: ProductDetail,
 });
 
-
 function ProductDetail() {
   const { productId } = Route.useParams();
   const navigate = useNavigate();
@@ -60,12 +59,14 @@ function ProductDetail() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from("products")
-        .select("*")
-        .eq("id", productId)
-        .eq("is_published", true)
-        .single();
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        productId,
+      );
+      const baseQuery = supabase.from("products").select("*").eq("is_published", true);
+
+      const { data } = isUuid
+        ? await baseQuery.eq("id", productId).maybeSingle()
+        : await baseQuery.eq("slug", productId).maybeSingle();
 
       if (!data) {
         toast.error("Product not found");
@@ -75,15 +76,33 @@ function ProductDetail() {
 
       setProduct(data as unknown as Product);
 
-      const { data: revs } = await supabase
+      const { data: revsData, error: revError } = await supabase
         .from("reviews")
-        .select("id,rating,title,body,created_at,profiles(display_name,avatar_url)")
-        .eq("product_id", productId)
+        .select("id,rating,title,body,created_at,user_id")
+        .eq("product_id", data.id)
         .eq("is_approved", true)
         .eq("is_removed", false)
         .order("created_at", { ascending: false });
 
-      setReviews((revs as unknown as Review[]) ?? []);
+      if (revError) {
+        console.error("Reviews query error:", revError);
+      }
+
+      if (revsData && revsData.length > 0) {
+        const uIds = [...new Set(revsData.map((r) => r.user_id))];
+        const { data: profData } = await supabase
+          .from("profiles")
+          .select("id,display_name,avatar_url")
+          .in("id", uIds);
+
+        const merged = revsData.map((r) => ({
+          ...r,
+          profiles: profData?.find((p) => p.id === r.user_id) || null,
+        }));
+        setReviews(merged as any);
+      } else {
+        setReviews([]);
+      }
       setLoading(false);
     })();
   }, [productId, navigate]);
@@ -93,21 +112,49 @@ function ProductDetail() {
     setUserReview(reviews.find((r) => r.profiles?.display_name === userId) ?? null);
   }, [reviews, userId]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!product) return;
-    addToCart({
+
+    // Validate stock availability
+    if (product.stock_count <= 0) {
+      toast.error("This product is currently out of stock");
+      return;
+    }
+
+    if (qty > product.stock_count) {
+      toast.error(`Only ${product.stock_count} units available`);
+      return;
+    }
+
+    // Check if user is authenticated
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      navigate({ to: "/auth" });
+      toast.error("Please sign in to add items to your bag");
+      return;
+    }
+
+    const success = await addToCart({
       productId: product.id,
       title: product.title,
       thumbnail: product.thumbnail,
       price: product.price,
       quantity: qty,
     });
-    toast.success(`Added ${qty} × "${product.title}" to your bag`);
+    if (success) {
+      toast.success(`Added ${qty} × "${product.title}" to your bag`);
+    }
   };
 
   const submitReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userId) { toast.error("Please sign in to review"); navigate({ to: "/auth" }); return; }
+    if (!userId) {
+      toast.error("Please sign in to review");
+      navigate({ to: "/auth" });
+      return;
+    }
     if (!product) return;
     setSubmitting(true);
     const { error } = await supabase.from("reviews").insert({
@@ -122,14 +169,29 @@ function ProductDetail() {
     toast.success("Thank you! Your review has been submitted.");
     setReviewForm({ rating: 5, title: "", body: "" });
     // Refresh reviews
-    const { data } = await supabase
+    const { data: revsData } = await supabase
       .from("reviews")
-      .select("id,rating,title,body,created_at,profiles(display_name,avatar_url)")
+      .select("id,rating,title,body,created_at,user_id")
       .eq("product_id", product.id)
       .eq("is_approved", true)
       .eq("is_removed", false)
       .order("created_at", { ascending: false });
-    setReviews((data as unknown as Review[]) ?? []);
+
+    if (revsData && revsData.length > 0) {
+      const uIds = [...new Set(revsData.map((r) => r.user_id))];
+      const { data: profData } = await supabase
+        .from("profiles")
+        .select("id,display_name,avatar_url")
+        .in("id", uIds);
+
+      const merged = revsData.map((r) => ({
+        ...r,
+        profiles: profData?.find((p) => p.id === r.user_id) || null,
+      }));
+      setReviews(merged as any);
+    } else {
+      setReviews([]);
+    }
   };
 
   if (loading) {
@@ -142,12 +204,12 @@ function ProductDetail() {
 
   if (!product) return null;
 
-  const images = product.images.length > 0 ? product.images : product.thumbnail ? [product.thumbnail] : [];
+  const images =
+    product.images.length > 0 ? product.images : product.thumbnail ? [product.thumbnail] : [];
 
   return (
     <div className="min-h-screen bg-cream">
       <SiteNav />
-      <FloatingActions />
 
       <div className="pt-28 pb-20 px-6 lg:px-12 mx-auto max-w-[1600px]">
         <Link
@@ -187,7 +249,11 @@ function ProductDetail() {
                       activeImg === i ? "border-primary" : "border-border hover:border-primary/50"
                     }`}
                   >
-                    <img src={img} alt={`Thumbnail ${i + 1}`} className="w-full h-full object-cover" />
+                    <img
+                      src={img}
+                      alt={`Thumbnail ${i + 1}`}
+                      className="w-full h-full object-cover"
+                    />
                   </button>
                 ))}
               </div>
@@ -208,8 +274,12 @@ function ProductDetail() {
                   <Star
                     key={s}
                     size={14}
-                    className={s <= Math.round(product.average_rating) ? "text-gold fill-gold" : "opacity-25"}
-                    style={{ color: s <= Math.round(product.average_rating) ? "var(--gold)" : undefined }}
+                    className={
+                      s <= Math.round(product.average_rating) ? "text-gold fill-gold" : "opacity-25"
+                    }
+                    style={{
+                      color: s <= Math.round(product.average_rating) ? "var(--gold)" : undefined,
+                    }}
                   />
                 ))}
               </div>
@@ -221,11 +291,33 @@ function ProductDetail() {
             <div className="hairline my-8" />
 
             <div className="flex items-baseline gap-4">
-              <span className="font-display text-5xl">₹{Number(product.price).toLocaleString("en-IN")}</span>
+              <span className="font-display text-5xl">
+                ₹{Number(product.price).toLocaleString("en-IN")}
+              </span>
               {product.original_price && product.original_price > product.price && (
                 <span className="text-xl opacity-40 line-through">
                   ₹{Number(product.original_price).toLocaleString("en-IN")}
                 </span>
+              )}
+            </div>
+
+            {/* Stock Availability Badge */}
+            <div className="mt-6">
+              {product.stock_count <= 0 ? (
+                <div className="inline-flex items-center gap-2.5 px-3 py-1.5 border border-burgundy/40 bg-burgundy/5 text-burgundy text-eyebrow text-xs tracking-widest">
+                  <span className="w-1.5 h-1.5 rounded-full bg-burgundy" />
+                  <span>Out of Stock — Currently Unavailable</span>
+                </div>
+              ) : product.stock_count === 1 ? (
+                <div className="inline-flex items-center gap-2.5 px-3 py-1.5 border border-[var(--gold)] bg-amber-500/10 text-amber-950 text-eyebrow text-xs tracking-widest">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] animate-pulse" />
+                  <span>Limited Reserve — Only 1 Arrangement Remaining</span>
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2.5 px-3 py-1.5 border border-border bg-ivory text-primary/80 text-eyebrow text-xs tracking-widest">
+                  <span className="w-1.5 h-1.5 rounded-full bg-forest" />
+                  <span>In Stock · {product.stock_count} Available</span>
+                </div>
               )}
             </div>
 
@@ -273,7 +365,9 @@ function ProductDetail() {
             </div>
 
             {product.stock_count > 0 && product.stock_count <= 5 && (
-              <p className="mt-3 text-eyebrow opacity-60">Only {product.stock_count} left in stock</p>
+              <p className="mt-3 text-eyebrow opacity-60">
+                Only {product.stock_count} left in stock
+              </p>
             )}
 
             <div className="mt-6 flex gap-3">
@@ -300,7 +394,10 @@ function ProductDetail() {
                 <p className="text-eyebrow opacity-60 mb-2">Tags</p>
                 <div className="flex flex-wrap gap-2">
                   {product.tags.map((t) => (
-                    <span key={t} className="text-eyebrow px-3 py-1.5 bg-ivory border border-border text-xs">
+                    <span
+                      key={t}
+                      className="text-eyebrow px-3 py-1.5 bg-ivory border border-border text-xs"
+                    >
                       {t}
                     </span>
                   ))}
@@ -319,8 +416,12 @@ function ProductDetail() {
                 <Star
                   key={s}
                   size={16}
-                  className={s <= Math.round(product.average_rating) ? "text-gold fill-gold" : "opacity-25"}
-                  style={{ color: s <= Math.round(product.average_rating) ? "var(--gold)" : undefined }}
+                  className={
+                    s <= Math.round(product.average_rating) ? "text-gold fill-gold" : "opacity-25"
+                  }
+                  style={{
+                    color: s <= Math.round(product.average_rating) ? "var(--gold)" : undefined,
+                  }}
                 />
               ))}
             </div>
@@ -396,7 +497,9 @@ function ProductDetail() {
           {/* Review List */}
           <div className="mt-12 space-y-8">
             {reviews.length === 0 && (
-              <p className="opacity-60 text-center py-10">No reviews yet. Be the first to review this bouquet.</p>
+              <p className="opacity-60 text-center py-10">
+                No reviews yet. Be the first to review this bouquet.
+              </p>
             )}
             {reviews.map((r) => (
               <article key={r.id} className="border-b border-border pb-8">
@@ -419,7 +522,13 @@ function ProductDetail() {
                 <div className="mt-3 flex items-center gap-2 text-eyebrow opacity-50">
                   <span>{r.profiles?.display_name ?? "Anonymous"}</span>
                   <span>·</span>
-                  <span>{new Date(r.created_at).toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" })}</span>
+                  <span>
+                    {new Date(r.created_at).toLocaleDateString("en-IN", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
                 </div>
               </article>
             ))}

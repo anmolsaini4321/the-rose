@@ -13,6 +13,7 @@ import { Toaster } from "@/components/ui/sonner";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
+import { FloatingActions } from "@/components/SiteNav";
 
 function NotFoundComponent() {
   return (
@@ -24,7 +25,9 @@ function NotFoundComponent() {
           The page you seek has drifted like a fallen petal.
         </p>
         <div className="mt-10">
-          <Link to="/" className="btn-royal btn-royal-hover">Return home</Link>
+          <Link to="/" className="btn-royal btn-royal-hover">
+            Return home
+          </Link>
         </div>
       </div>
     </div>
@@ -46,12 +49,19 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <button
-            onClick={() => { router.invalidate(); reset(); }}
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
             className="btn-royal btn-royal-hover"
           >
             Try again
           </button>
-          <a href="/" className="btn-royal btn-royal-hover" style={{ background: "transparent", color: "var(--forest)" }}>
+          <a
+            href="/"
+            className="btn-royal btn-royal-hover"
+            style={{ background: "transparent", color: "var(--forest)" }}
+          >
             Go home
           </a>
         </div>
@@ -63,31 +73,32 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "Florist",
-  "name": "The Rose by Geetanjli",
-  "description": "The Rose by Geetanjli offers fresh flower bouquets & same-day delivery in Faridabad. Order luxury roses, floral arrangements & gifts online from our atelier.",
-  "address": {
+  name: "The Rose by Geetanjli",
+  description:
+    "The Rose by Geetanjli offers fresh flower bouquets & same-day delivery in Faridabad. Order luxury roses, floral arrangements & gifts online from our atelier.",
+  address: {
     "@type": "PostalAddress",
-    "streetAddress": "Omaxe World Street",
-    "addressLocality": "Faridabad",
-    "addressRegion": "Haryana",
-    "addressCountry": "IN"
+    streetAddress: "Omaxe World Street",
+    addressLocality: "Faridabad",
+    addressRegion: "Haryana",
+    addressCountry: "IN",
   },
-  "telephone": "+91 96751 59675",
-  "openingHoursSpecification": [
+  telephone: "+91 96751 59675",
+  openingHoursSpecification: [
     {
       "@type": "OpeningHoursSpecification",
-      "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-      "opens": "09:00",
-      "closes": "21:00"
-    }
+      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+      opens: "09:00",
+      closes: "21:00",
+    },
   ],
-  "priceRange": "₹₹ - ₹₹₹",
-  "geo": {
+  priceRange: "₹₹ - ₹₹₹",
+  geo: {
     "@type": "GeoCoordinates",
-    "latitude": "28.3800",
-    "longitude": "77.3500"
+    latitude: "28.3800",
+    longitude: "77.3500",
   },
-  "url": "https://the-rose-delta.vercel.app"
+  url: "https://the-rose-delta.vercel.app",
 };
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
@@ -96,17 +107,39 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "The Rose by Geetanjli | Fresh Flower Bouquets & Delivery in Faridabad" },
-      { name: "description", content: "The Rose by Geetanjli offers fresh flower bouquets & same-day delivery in Faridabad. Order luxury roses, floral arrangements & gifts online from our atelier." },
-      { name: "keywords", content: "bouquet near me, the rose, the rose by geetanjli, flower delivery Faridabad, rose bouquet Faridabad, fresh flowers Faridabad" },
+      {
+        name: "description",
+        content:
+          "The Rose by Geetanjli offers fresh flower bouquets & same-day delivery in Faridabad. Order luxury roses, floral arrangements & gifts online from our atelier.",
+      },
+      {
+        name: "keywords",
+        content:
+          "bouquet near me, the rose, the rose by geetanjli, flower delivery Faridabad, rose bouquet Faridabad, fresh flowers Faridabad",
+      },
       { name: "author", content: "The Rose by Geetanjli" },
-      { property: "og:title", content: "The Rose by Geetanjli | Fresh Flower Bouquets & Delivery in Faridabad" },
-      { property: "og:description", content: "Order fresh flower bouquets & luxury rose arrangements with fast delivery in Faridabad from The Rose by Geetanjli." },
+      {
+        property: "og:title",
+        content: "The Rose by Geetanjli | Fresh Flower Bouquets & Delivery in Faridabad",
+      },
+      {
+        property: "og:description",
+        content:
+          "Order fresh flower bouquets & luxury rose arrangements with fast delivery in Faridabad from The Rose by Geetanjli.",
+      },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://the-rose-delta.vercel.app" },
       { property: "og:image", content: "https://the-rose-delta.vercel.app/favicon.ico" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "The Rose by Geetanjli | Fresh Flower Bouquets & Delivery in Faridabad" },
-      { name: "twitter:description", content: "Order fresh flower bouquets & luxury rose arrangements with fast delivery in Faridabad from The Rose by Geetanjli." },
+      {
+        name: "twitter:title",
+        content: "The Rose by Geetanjli | Fresh Flower Bouquets & Delivery in Faridabad",
+      },
+      {
+        name: "twitter:description",
+        content:
+          "Order fresh flower bouquets & luxury rose arrangements with fast delivery in Faridabad from The Rose by Geetanjli.",
+      },
       { name: "twitter:image", content: "https://the-rose-delta.vercel.app/favicon.ico" },
     ],
     scripts: [
@@ -120,7 +153,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Work+Sans:wght@300;400;500&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Work+Sans:wght@300;400;500&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -132,7 +168,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <head><HeadContent /></head>
+      <head>
+        <HeadContent />
+      </head>
       <body>
         {children}
         <Scripts />
@@ -146,7 +184,9 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       router.invalidate();
       if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
@@ -157,6 +197,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
+      <FloatingActions />
       <Toaster richColors position="top-center" />
     </QueryClientProvider>
   );

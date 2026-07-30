@@ -1,5 +1,13 @@
 export type Wrapping = { id: string; name: string; swatch: string; ring?: string };
-export type Flower = { id: string; name: string; meaning: string; price: number; color: string; icon: string };
+export type Flower = {
+  id: string;
+  name: string;
+  meaning: string;
+  price: number;
+  color: string;
+  icon: string;
+  image?: string;
+};
 export type Filler = { id: string; name: string; price: number; color: string };
 export type Ribbon = { id: string; name: string; swatch: string };
 export type Accessory = { id: string; name: string; price: number };
@@ -16,22 +24,145 @@ export const WRAPPINGS: Wrapping[] = [
 ];
 
 export const FLOWERS: Flower[] = [
-  { id: "red-rose", name: "Red Rose", meaning: "Enduring love", price: 180, color: "oklch(0.42 0.16 20)", icon: "🌹" },
-  { id: "white-rose", name: "White Rose", meaning: "Reverence & new beginnings", price: 170, color: "oklch(0.96 0.01 82)", icon: "🌸" },
-  { id: "pink-rose", name: "Pink Rose", meaning: "Grace & admiration", price: 170, color: "oklch(0.82 0.06 20)", icon: "🌷" },
-  { id: "yellow-rose", name: "Yellow Rose", meaning: "Joyful friendship", price: 160, color: "oklch(0.88 0.09 90)", icon: "🌼" },
-  { id: "tulip", name: "Tulip", meaning: "Perfect love", price: 140, color: "oklch(0.72 0.14 20)", icon: "🌷" },
-  { id: "lily", name: "Lily", meaning: "Purity", price: 220, color: "oklch(0.94 0.03 82)", icon: "🌺" },
-  { id: "hydrangea", name: "Hydrangea", meaning: "Heartfelt emotion", price: 260, color: "oklch(0.75 0.06 240)", icon: "💠" },
-  { id: "peony", name: "Peony", meaning: "Romance & prosperity", price: 320, color: "oklch(0.85 0.06 10)", icon: "🌸" },
-  { id: "orchid", name: "Orchid", meaning: "Rare beauty", price: 380, color: "oklch(0.75 0.08 330)", icon: "🌺" },
-  { id: "carnation", name: "Carnation", meaning: "Devotion", price: 90, color: "oklch(0.8 0.08 15)", icon: "🌸" },
-  { id: "sunflower", name: "Sunflower", meaning: "Adoration", price: 130, color: "oklch(0.82 0.15 90)", icon: "🌻" },
-  { id: "babys-breath", name: "Baby's Breath", meaning: "Everlasting", price: 60, color: "oklch(0.97 0.005 82)", icon: "✿" },
-  { id: "lavender", name: "Lavender", meaning: "Serenity", price: 110, color: "oklch(0.68 0.08 300)", icon: "🌾" },
-  { id: "daisy", name: "Daisy", meaning: "Innocence", price: 70, color: "oklch(0.96 0.02 90)", icon: "🌼" },
-  { id: "eucalyptus", name: "Eucalyptus", meaning: "Protection", price: 80, color: "oklch(0.55 0.05 155)", icon: "🌿" },
-  { id: "chrysanthemum", name: "Chrysanthemum", meaning: "Longevity", price: 100, color: "oklch(0.82 0.1 60)", icon: "🌼" },
+  {
+    id: "red-rose",
+    name: "Red Rose",
+    meaning: "Enduring love",
+    price: 180,
+    color: "oklch(0.42 0.16 20)",
+    icon: "🌹",
+    image: "https://assets.pauwee.com/color/flowers/rose.webp",
+  },
+  {
+    id: "white-rose",
+    name: "White Rose",
+    meaning: "Reverence & new beginnings",
+    price: 170,
+    color: "oklch(0.96 0.01 82)",
+    icon: "🌸",
+    image: "https://assets.pauwee.com/color/flowers/anemone.webp",
+  },
+  {
+    id: "pink-rose",
+    name: "Pink Rose",
+    meaning: "Grace & admiration",
+    price: 170,
+    color: "oklch(0.82 0.06 20)",
+    icon: "🌷",
+    image: "https://assets.pauwee.com/color/flowers/ranunculus.webp",
+  },
+  {
+    id: "yellow-rose",
+    name: "Yellow Rose",
+    meaning: "Joyful friendship",
+    price: 160,
+    color: "oklch(0.88 0.09 90)",
+    icon: "🌼",
+    image: "https://assets.pauwee.com/color/flowers/zinnia.webp",
+  },
+  {
+    id: "tulip",
+    name: "Tulip",
+    meaning: "Perfect love",
+    price: 140,
+    color: "oklch(0.72 0.14 20)",
+    icon: "🌷",
+    image: "https://assets.pauwee.com/color/flowers/tulip.webp",
+  },
+  {
+    id: "lily",
+    name: "Lily",
+    meaning: "Purity",
+    price: 220,
+    color: "oklch(0.94 0.03 82)",
+    icon: "🌺",
+    image: "https://assets.pauwee.com/color/flowers/lily.webp",
+  },
+  {
+    id: "hydrangea",
+    name: "Hydrangea",
+    meaning: "Heartfelt emotion",
+    price: 260,
+    color: "oklch(0.75 0.06 240)",
+    icon: "💠",
+    image: "https://assets.pauwee.com/color/flowers/dahlia.webp",
+  },
+  {
+    id: "peony",
+    name: "Peony",
+    meaning: "Romance & prosperity",
+    price: 320,
+    color: "oklch(0.85 0.06 10)",
+    icon: "🌸",
+    image: "https://assets.pauwee.com/color/flowers/peony.webp",
+  },
+  {
+    id: "orchid",
+    name: "Orchid",
+    meaning: "Rare beauty",
+    price: 380,
+    color: "oklch(0.75 0.08 330)",
+    icon: "🌺",
+    image: "https://assets.pauwee.com/color/flowers/orchid.webp",
+  },
+  {
+    id: "carnation",
+    name: "Carnation",
+    meaning: "Devotion",
+    price: 90,
+    color: "oklch(0.8 0.08 15)",
+    icon: "🌸",
+    image: "https://assets.pauwee.com/color/flowers/carnation.webp",
+  },
+  {
+    id: "sunflower",
+    name: "Sunflower",
+    meaning: "Adoration",
+    price: 130,
+    color: "oklch(0.82 0.15 90)",
+    icon: "🌻",
+    image: "https://assets.pauwee.com/color/flowers/sunflower.webp",
+  },
+  {
+    id: "babys-breath",
+    name: "Baby's Breath",
+    meaning: "Everlasting",
+    price: 60,
+    color: "oklch(0.97 0.005 82)",
+    icon: "✿",
+  },
+  {
+    id: "lavender",
+    name: "Lavender",
+    meaning: "Serenity",
+    price: 110,
+    color: "oklch(0.68 0.08 300)",
+    icon: "🌾",
+  },
+  {
+    id: "daisy",
+    name: "Daisy",
+    meaning: "Innocence",
+    price: 70,
+    color: "oklch(0.96 0.02 90)",
+    icon: "🌼",
+  },
+  {
+    id: "eucalyptus",
+    name: "Eucalyptus",
+    meaning: "Protection",
+    price: 80,
+    color: "oklch(0.55 0.05 155)",
+    icon: "🌿",
+  },
+  {
+    id: "chrysanthemum",
+    name: "Chrysanthemum",
+    meaning: "Longevity",
+    price: 100,
+    color: "oklch(0.82 0.1 60)",
+    icon: "🌼",
+  },
 ];
 
 export const FILLERS: Filler[] = [
@@ -101,7 +232,10 @@ export const DEFAULT_CONFIG: BouquetConfig = {
   wrapping: "ivory",
   ribbon_material: "silk",
   ribbon_color: "emerald",
-  flowers: [{ id: "red-rose", qty: 6 }, { id: "white-rose", qty: 6 }],
+  flowers: [
+    { id: "red-rose", qty: 6 },
+    { id: "white-rose", qty: 6 },
+  ],
   fillers: ["eucalyptus-f"],
   accessories: ["greeting-card"],
   message: "",

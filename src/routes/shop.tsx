@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { SiteNav, FloatingActions } from "@/components/SiteNav";
+import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { supabase } from "@/integrations/supabase/client";
 import { addToCart } from "@/lib/cart-store";
@@ -31,10 +31,22 @@ export const Route = createFileRoute("/shop")({
   head: () => ({
     meta: [
       { title: "Shop Bouquets — Fresh Flower Delivery in Faridabad | The Rose by Geetanjli" },
-      { name: "description", content: "Shop handcrafted rose bouquets & fresh floral arrangements with same-day delivery in Faridabad. Order luxury bouquets online from The Rose by Geetanjli." },
-      { name: "keywords", content: "buy bouquet online, flower shop Faridabad, rose bouquet price, fresh flower delivery, order flowers online Faridabad" },
+      {
+        name: "description",
+        content:
+          "Shop handcrafted rose bouquets & fresh floral arrangements with same-day delivery in Faridabad. Order luxury bouquets online from The Rose by Geetanjli.",
+      },
+      {
+        name: "keywords",
+        content:
+          "buy bouquet online, flower shop Faridabad, rose bouquet price, fresh flower delivery, order flowers online Faridabad",
+      },
       { property: "og:title", content: "Shop Bouquets — The Rose by Geetanjli Faridabad" },
-      { property: "og:description", content: "Shop handcrafted rose bouquets & fresh floral arrangements with same-day delivery in Faridabad." },
+      {
+        property: "og:description",
+        content:
+          "Shop handcrafted rose bouquets & fresh floral arrangements with same-day delivery in Faridabad.",
+      },
       { property: "og:type", content: "website" },
     ],
   }),
@@ -60,6 +72,7 @@ function StarRating({ rating, count }: { rating: number; count: number }) {
 }
 
 function Shop() {
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("All");
@@ -71,7 +84,9 @@ function Shop() {
       setLoading(true);
       let query = supabase
         .from("products")
-        .select("id,title,slug,short_description,price,original_price,thumbnail,images,category,tags,average_rating,review_count,stock_count,is_featured,flowers_included")
+        .select(
+          "id,title,slug,short_description,price,original_price,thumbnail,images,category,tags,average_rating,review_count,stock_count,is_featured,flowers_included",
+        )
         .eq("is_published", true);
 
       if (activeCategory !== "All") {
@@ -88,15 +103,34 @@ function Shop() {
     })();
   }, [activeCategory, sortBy]);
 
-  const handleQuickAdd = (p: Product) => {
-    addToCart({
+  const handleQuickAdd = async (p: Product) => {
+    // Validate stock availability
+    if (p.stock_count <= 0) {
+      toast.error("This product is currently out of stock");
+      return;
+    }
+
+    // Check if user is authenticated
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      navigate({ to: "/auth" });
+      toast.error("Please sign in to add items to your bag");
+      return;
+    }
+
+    const success = await addToCart({
       productId: p.id,
       title: p.title,
       thumbnail: p.thumbnail,
       price: p.price,
       quantity: 1,
     });
-    toast.success(`"${p.title}" added to your bag`);
+
+    if (success) {
+      toast.success(`"${p.title}" added to your bag`);
+    }
   };
 
   const featured = products.filter((p) => p.is_featured);
@@ -105,15 +139,13 @@ function Shop() {
   return (
     <div className="min-h-screen bg-cream">
       <SiteNav />
-      <FloatingActions />
 
       {/* Hero strip */}
       <section className="pt-32 pb-16 px-6 lg:px-12 mx-auto max-w-[1600px]">
         <div className="max-w-3xl">
           <p className="text-eyebrow text-primary/60">The Atelier — Online Shop</p>
           <h1 className="text-display text-5xl md:text-7xl mt-6">
-            Fresh Bouquets,{" "}
-            <em>delivered in Faridabad.</em>
+            Fresh Bouquets, <em>delivered in Faridabad.</em>
           </h1>
           <p className="mt-6 opacity-70 max-w-xl">
             Order handcrafted rose bouquets & luxury florals online. Same-day delivery available
@@ -148,7 +180,11 @@ function Shop() {
                     ? "border-primary bg-forest text-ivory"
                     : "border-border hover:border-primary/50"
                 }`}
-                style={activeCategory === cat ? { background: "var(--forest)", color: "var(--ivory)" } : {}}
+                style={
+                  activeCategory === cat
+                    ? { background: "var(--forest)", color: "var(--ivory)" }
+                    : {}
+                }
               >
                 {cat}
               </button>
@@ -175,7 +211,10 @@ function Shop() {
                 ].map((opt) => (
                   <button
                     key={opt.v}
-                    onClick={() => { setSortBy(opt.v as typeof sortBy); setShowFilters(false); }}
+                    onClick={() => {
+                      setSortBy(opt.v as typeof sortBy);
+                      setShowFilters(false);
+                    }}
                     className={`w-full text-left px-5 py-3 text-eyebrow hover:bg-cream transition ${sortBy === opt.v ? "opacity-100" : "opacity-60"}`}
                   >
                     {opt.l}
@@ -190,10 +229,19 @@ function Shop() {
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="bg-ivory border border-border animate-pulse">
-                <div className="aspect-[3/4] bg-champagne" style={{ background: "var(--champagne)" }} />
+                <div
+                  className="aspect-[3/4] bg-champagne"
+                  style={{ background: "var(--champagne)" }}
+                />
                 <div className="p-5 space-y-3">
-                  <div className="h-3 bg-champagne rounded w-3/4" style={{ background: "var(--champagne)" }} />
-                  <div className="h-3 bg-champagne rounded w-1/2" style={{ background: "var(--champagne)" }} />
+                  <div
+                    className="h-3 bg-champagne rounded w-3/4"
+                    style={{ background: "var(--champagne)" }}
+                  />
+                  <div
+                    className="h-3 bg-champagne rounded w-1/2"
+                    style={{ background: "var(--champagne)" }}
+                  />
                 </div>
               </div>
             ))}
@@ -244,7 +292,10 @@ function FeaturedCard({
   return (
     <article className="group relative bg-ivory border border-border overflow-hidden">
       <Link to="/product/$productId" params={{ productId: p.id }}>
-        <div className="relative aspect-[4/5] overflow-hidden bg-champagne" style={{ background: "var(--champagne)" }}>
+        <div
+          className="relative aspect-[4/5] overflow-hidden bg-champagne"
+          style={{ background: "var(--champagne)" }}
+        >
           {p.thumbnail || p.images?.[0] ? (
             <img
               src={p.thumbnail ?? p.images[0]}
@@ -256,13 +307,19 @@ function FeaturedCard({
             <PlaceholderBloom />
           )}
           <div className="absolute top-4 left-4">
-            <span className="text-eyebrow px-3 py-1.5 text-xs" style={{ background: "var(--gold)", color: "var(--forest)" }}>
+            <span
+              className="text-eyebrow px-3 py-1.5 text-xs"
+              style={{ background: "var(--gold)", color: "var(--forest)" }}
+            >
               Featured
             </span>
           </div>
           {p.original_price && p.original_price > p.price && (
             <div className="absolute top-4 right-4">
-              <span className="text-eyebrow px-3 py-1.5 text-xs" style={{ background: "var(--burgundy)", color: "var(--ivory)" }}>
+              <span
+                className="text-eyebrow px-3 py-1.5 text-xs"
+                style={{ background: "var(--burgundy)", color: "var(--ivory)" }}
+              >
                 Sale
               </span>
             </div>
@@ -270,7 +327,9 @@ function FeaturedCard({
         </div>
         <div className="p-6">
           <p className="text-eyebrow opacity-50">{p.category}</p>
-          <h3 className="font-display text-2xl mt-2 group-hover:italic transition-all">{p.title}</h3>
+          <h3 className="font-display text-2xl mt-2 group-hover:italic transition-all">
+            {p.title}
+          </h3>
           {p.short_description && (
             <p className="text-sm opacity-60 mt-2 line-clamp-2">{p.short_description}</p>
           )}
@@ -278,9 +337,13 @@ function FeaturedCard({
             <StarRating rating={p.average_rating} count={p.review_count} />
           </div>
           <div className="mt-4 flex items-baseline gap-3">
-            <span className="font-display text-2xl">₹{Number(p.price).toLocaleString("en-IN")}</span>
+            <span className="font-display text-2xl">
+              ₹{Number(p.price).toLocaleString("en-IN")}
+            </span>
             {p.original_price && p.original_price > p.price && (
-              <span className="text-sm opacity-40 line-through">₹{Number(p.original_price).toLocaleString("en-IN")}</span>
+              <span className="text-sm opacity-40 line-through">
+                ₹{Number(p.original_price).toLocaleString("en-IN")}
+              </span>
             )}
           </div>
         </div>
@@ -309,7 +372,10 @@ function ProductCard({
   return (
     <article className="group bg-ivory border border-border overflow-hidden">
       <Link to="/product/$productId" params={{ productId: p.id }}>
-        <div className="relative aspect-[3/4] overflow-hidden" style={{ background: "var(--champagne)" }}>
+        <div
+          className="relative aspect-[3/4] overflow-hidden"
+          style={{ background: "var(--champagne)" }}
+        >
           {p.thumbnail || p.images?.[0] ? (
             <img
               src={p.thumbnail ?? p.images[0]}
@@ -328,14 +394,18 @@ function ProductCard({
         </div>
         <div className="p-5">
           <p className="text-eyebrow opacity-40 text-[0.62rem]">{p.category}</p>
-          <h3 className="font-display text-xl mt-1 group-hover:italic transition-all leading-tight">{p.title}</h3>
+          <h3 className="font-display text-xl mt-1 group-hover:italic transition-all leading-tight">
+            {p.title}
+          </h3>
           <div className="mt-2">
             <StarRating rating={p.average_rating} count={p.review_count} />
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="font-display text-xl">₹{Number(p.price).toLocaleString("en-IN")}</span>
             {p.original_price && p.original_price > p.price && (
-              <span className="text-xs opacity-40 line-through">₹{Number(p.original_price).toLocaleString("en-IN")}</span>
+              <span className="text-xs opacity-40 line-through">
+                ₹{Number(p.original_price).toLocaleString("en-IN")}
+              </span>
             )}
           </div>
         </div>
@@ -364,4 +434,3 @@ function PlaceholderBloom() {
     </div>
   );
 }
-

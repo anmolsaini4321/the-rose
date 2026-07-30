@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { SiteNav, FloatingActions } from "@/components/SiteNav";
+import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { supabase } from "@/integrations/supabase/client";
 import { addToCart } from "@/lib/cart-store";
@@ -73,15 +73,33 @@ function ProductDetail() {
       }
       setProduct(data as unknown as Product);
 
-      const { data: revs } = await supabase
+      const { data: revsData, error: revError } = await supabase
         .from("reviews")
-        .select("id,rating,title,body,created_at,user_id,profiles(display_name,avatar_url)")
-        .eq("product_id", productId)
+        .select("id,rating,title,body,created_at,user_id")
+        .eq("product_id", data.id)
         .eq("is_approved", true)
         .eq("is_removed", false)
         .order("created_at", { ascending: false });
 
-      setReviews((revs as unknown as Review[]) ?? []);
+      if (revError) {
+        console.error("Reviews fetched error:", revError);
+      }
+
+      if (revsData && revsData.length > 0) {
+        const uIds = [...new Set(revsData.map((r) => r.user_id))];
+        const { data: profData } = await supabase
+          .from("profiles")
+          .select("id,display_name,avatar_url")
+          .in("id", uIds);
+
+        const merged = revsData.map((r) => ({
+          ...r,
+          profiles: profData?.find((p) => p.id === r.user_id) || null,
+        }));
+        setReviews(merged as any);
+      } else {
+        setReviews([]);
+      }
       setLoading(false);
     })();
   }, [productId, navigate]);
@@ -90,26 +108,55 @@ function ProductDetail() {
   useEffect(() => {
     if (!userId || reviews.length === 0) return;
     const mine = (reviews as unknown as Array<{ user_id: string }>).find(
-      (r) => r.user_id === userId
+      (r) => r.user_id === userId,
     );
     setAlreadyReviewed(!!mine);
   }, [reviews, userId]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!product) return;
-    addToCart({
+
+    // Validate stock availability
+    if (product.stock_count <= 0) {
+      toast.error("This product is currently out of stock");
+      return;
+    }
+
+    if (qty > product.stock_count) {
+      toast.error(`Only ${product.stock_count} units available`);
+      return;
+    }
+
+    // Check if user is authenticated
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      navigate({ to: "/auth" });
+      toast.error("Please sign in to add items to your bag");
+      return;
+    }
+
+    const success = await addToCart({
       productId: product.id,
       title: product.title,
       thumbnail: product.thumbnail,
       price: product.price,
       quantity: qty,
     });
-    toast.success(`Added ${qty} × "${product.title}" to your bag`);
+
+    if (success) {
+      toast.success(`Added ${qty} × "${product.title}" to your bag`);
+    }
   };
 
   const submitReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userId) { toast.error("Please sign in to review"); navigate({ to: "/auth" }); return; }
+    if (!userId) {
+      toast.error("Please sign in to review");
+      navigate({ to: "/auth" });
+      return;
+    }
     if (!product) return;
     setSubmitting(true);
     const { error } = await supabase.from("reviews").insert({
@@ -118,7 +165,7 @@ function ProductDetail() {
       rating: reviewForm.rating,
       title: reviewForm.title || null,
       body: reviewForm.body,
-      is_approved: true,  // Auto-approve reviews for now
+      is_approved: true, // Auto-approve reviews for now
     });
     setSubmitting(false);
     if (error) {
@@ -134,14 +181,29 @@ function ProductDetail() {
     setReviewForm({ rating: 5, title: "", body: "" });
     setAlreadyReviewed(true);
     // Refresh reviews
-    const { data } = await supabase
+    const { data: revsData } = await supabase
       .from("reviews")
-      .select("id,rating,title,body,created_at,user_id,profiles(display_name,avatar_url)")
+      .select("id,rating,title,body,created_at,user_id")
       .eq("product_id", product.id)
       .eq("is_approved", true)
       .eq("is_removed", false)
       .order("created_at", { ascending: false });
-    setReviews((data as unknown as Review[]) ?? []);
+
+    if (revsData && revsData.length > 0) {
+      const uIds = [...new Set(revsData.map((r) => r.user_id))];
+      const { data: profData } = await supabase
+        .from("profiles")
+        .select("id,display_name,avatar_url")
+        .in("id", uIds);
+
+      const merged = revsData.map((r) => ({
+        ...r,
+        profiles: profData?.find((p) => p.id === r.user_id) || null,
+      }));
+      setReviews(merged as any);
+    } else {
+      setReviews([]);
+    }
   };
 
   if (loading) {
@@ -156,19 +218,30 @@ function ProductDetail() {
     );
   }
 
-  if (!product) return null;
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-cream flex flex-col items-center justify-center p-6">
+        <SiteNav />
+        <div className="text-center pt-28 max-w-md">
+          <p className="text-5xl mb-4">🌹</p>
+          <h1 className="font-display text-3xl mb-3">Bouquet Not Found</h1>
+          <p className="text-sm opacity-60 mb-8">
+            The arrangement you are looking for may have been retired or is no longer available.
+          </p>
+          <Link to="/shop" className="btn-royal btn-royal-hover inline-flex">
+            Explore Collection
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const images =
-    product.images.length > 0
-      ? product.images
-      : product.thumbnail
-      ? [product.thumbnail]
-      : [];
+    product.images.length > 0 ? product.images : product.thumbnail ? [product.thumbnail] : [];
 
   return (
     <div className="min-h-screen bg-cream">
       <SiteNav />
-      <FloatingActions />
 
       <div className="pt-28 pb-20 px-6 lg:px-12 mx-auto max-w-[1600px]">
         <Link
@@ -222,9 +295,7 @@ function ProductDetail() {
               {product.title}
             </h1>
             {product.short_description && (
-              <p className="mt-4 text-lg opacity-70 leading-relaxed">
-                {product.short_description}
-              </p>
+              <p className="mt-4 text-lg opacity-70 leading-relaxed">{product.short_description}</p>
             )}
 
             {/* Rating */}
@@ -257,6 +328,26 @@ function ProductDetail() {
                 <span className="text-xl opacity-40 line-through">
                   ₹{Number(product.original_price).toLocaleString("en-IN")}
                 </span>
+              )}
+            </div>
+
+            {/* Stock Availability Badge */}
+            <div className="mt-6">
+              {product.stock_count <= 0 ? (
+                <div className="inline-flex items-center gap-2.5 px-3 py-1.5 border border-burgundy/40 bg-burgundy/5 text-burgundy text-eyebrow text-xs tracking-widest">
+                  <span className="w-1.5 h-1.5 rounded-full bg-burgundy" />
+                  <span>Out of Stock — Currently Unavailable</span>
+                </div>
+              ) : product.stock_count === 1 ? (
+                <div className="inline-flex items-center gap-2.5 px-3 py-1.5 border border-[var(--gold)] bg-amber-500/10 text-amber-950 text-eyebrow text-xs tracking-widest">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] animate-pulse" />
+                  <span>Limited Reserve — Only 1 Arrangement Remaining</span>
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2.5 px-3 py-1.5 border border-border bg-ivory text-primary/80 text-eyebrow text-xs tracking-widest">
+                  <span className="w-1.5 h-1.5 rounded-full bg-forest" />
+                  <span>In Stock · {product.stock_count} Available</span>
+                </div>
               )}
             </div>
 
@@ -374,8 +465,8 @@ function ProductDetail() {
               ))}
             </div>
             <span className="text-lg opacity-80">
-              {product.average_rating.toFixed(1)} out of 5 &nbsp;·&nbsp;{" "}
-              {product.review_count} {product.review_count === 1 ? "review" : "reviews"}
+              {product.average_rating.toFixed(1)} out of 5 &nbsp;·&nbsp; {product.review_count}{" "}
+              {product.review_count === 1 ? "review" : "reviews"}
             </span>
           </div>
 
@@ -472,9 +563,7 @@ function ProductDetail() {
                     />
                   ))}
                 </div>
-                {r.title && (
-                  <h3 className="font-display text-xl mt-2">{r.title}</h3>
-                )}
+                {r.title && <h3 className="font-display text-xl mt-2">{r.title}</h3>}
                 <p className="mt-2 opacity-80 leading-relaxed">{r.body}</p>
                 <div className="mt-3 flex items-center gap-2 text-eyebrow opacity-50">
                   <span>{r.profiles?.display_name ?? "Anonymous"}</span>
