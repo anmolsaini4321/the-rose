@@ -26,6 +26,36 @@ type Order = {
   order_items: OrderItem[];
 };
 
+const DELIVERY_PARTNER_DETAILS: Record<
+  string,
+  { agency: string; agentName: string; agentId: string; agentPhone: string }
+> = {
+  Delhivery: {
+    agency: "Delhivery Logistics",
+    agentName: "Rajesh Kumar",
+    agentId: "DEL-88931",
+    agentPhone: "+91 98765 43210",
+  },
+  "Blue Dart": {
+    agency: "Blue Dart Express",
+    agentName: "Amit Sharma",
+    agentId: "BD-44210",
+    agentPhone: "+91 98123 45678",
+  },
+  FastExpress: {
+    agency: "FastExpress Courier",
+    agentName: "Vikram Singh",
+    agentId: "FE-77512",
+    agentPhone: "+91 99988 77665",
+  },
+  DHL: {
+    agency: "DHL Express",
+    agentName: "Suresh Raina",
+    agentId: "DHL-11094",
+    agentPhone: "+91 98760 12345",
+  },
+};
+
 export function ActiveOrderTracker() {
   const [userId, setUserId] = useState<string | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -339,6 +369,42 @@ export function ActiveOrderTracker() {
                   </div>
                 </div>
               </div>
+
+              {/* Allotted Delivery Agent Details */}
+              {selectedOrder.delivery_partner &&
+                DELIVERY_PARTNER_DETAILS[selectedOrder.delivery_partner] && (
+                  <div className="bg-[#fcfbf9] border border-border/60 p-4 space-y-2">
+                    <span className="text-[9px] uppercase tracking-widest opacity-40 font-bold block">
+                      Allotted Delivery Agent
+                    </span>
+                    <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-xs">
+                      <div>
+                        <span className="opacity-60 block text-[10px]">Agency</span>
+                        <span className="font-semibold text-ink">
+                          {DELIVERY_PARTNER_DETAILS[selectedOrder.delivery_partner].agency}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="opacity-60 block text-[10px]">Agent Name</span>
+                        <span className="font-semibold text-ink">
+                          {DELIVERY_PARTNER_DETAILS[selectedOrder.delivery_partner].agentName}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="opacity-60 block text-[10px]">Agent ID</span>
+                        <code className="bg-ink/5 px-1 py-0.5 rounded font-mono text-[10px] text-ink">
+                          {DELIVERY_PARTNER_DETAILS[selectedOrder.delivery_partner].agentId}
+                        </code>
+                      </div>
+                      <div>
+                        <span className="opacity-60 block text-[10px]">Phone Number</span>
+                        <span className="font-semibold text-ink">
+                          {DELIVERY_PARTNER_DETAILS[selectedOrder.delivery_partner].agentPhone}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
               {/* Order Items Summary */}
               <div className="border border-border bg-ivory">

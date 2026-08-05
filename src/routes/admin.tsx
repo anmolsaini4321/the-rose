@@ -64,6 +64,36 @@ type Order = {
   delivery_confirmed_by_user?: boolean;
 };
 
+const DELIVERY_PARTNER_DETAILS: Record<
+  string,
+  { agency: string; agentName: string; agentId: string; agentPhone: string }
+> = {
+  Delhivery: {
+    agency: "Delhivery Logistics",
+    agentName: "Rajesh Kumar",
+    agentId: "DEL-88931",
+    agentPhone: "+91 98765 43210",
+  },
+  "Blue Dart": {
+    agency: "Blue Dart Express",
+    agentName: "Amit Sharma",
+    agentId: "BD-44210",
+    agentPhone: "+91 98123 45678",
+  },
+  FastExpress: {
+    agency: "FastExpress Courier",
+    agentName: "Vikram Singh",
+    agentId: "FE-77512",
+    agentPhone: "+91 99988 77665",
+  },
+  DHL: {
+    agency: "DHL Express",
+    agentName: "Suresh Raina",
+    agentId: "DHL-11094",
+    agentPhone: "+91 98760 12345",
+  },
+};
+
 type Review = {
   id: string;
   rating: number;
@@ -1089,6 +1119,34 @@ function AdminPanel() {
                             {selectedOrder.delivery_partner || "Unassigned"}
                           </span>
                         </p>
+                        {selectedOrder.delivery_partner &&
+                          DELIVERY_PARTNER_DETAILS[selectedOrder.delivery_partner] && (
+                            <div className="space-y-1.5 pl-4 border-l border-border/80 my-2">
+                              <p className="text-xs opacity-80">
+                                <span className="opacity-60 font-semibold">Agency:</span>{" "}
+                                {DELIVERY_PARTNER_DETAILS[selectedOrder.delivery_partner].agency}
+                              </p>
+                              <p className="text-xs opacity-80">
+                                <span className="opacity-60 font-semibold">Agent Name:</span>{" "}
+                                {DELIVERY_PARTNER_DETAILS[selectedOrder.delivery_partner].agentName}
+                              </p>
+                              <p className="text-xs opacity-80">
+                                <span className="opacity-60 font-semibold">Agent ID:</span>{" "}
+                                <code className="bg-ink/5 px-1 py-0.5 rounded font-mono text-[10px]">
+                                  {DELIVERY_PARTNER_DETAILS[selectedOrder.delivery_partner].agentId}
+                                </code>
+                              </p>
+                              <p className="text-xs opacity-80">
+                                <span className="opacity-60 font-semibold">Phone:</span>{" "}
+                                <span className="font-medium text-ink">
+                                  {
+                                    DELIVERY_PARTNER_DETAILS[selectedOrder.delivery_partner]
+                                      .agentPhone
+                                  }
+                                </span>
+                              </p>
+                            </div>
+                          )}
                         {selectedOrder.delivery_eta && (
                           <p className="text-sm opacity-90">
                             <span className="opacity-60 font-semibold">Estimated Delivery:</span>{" "}
