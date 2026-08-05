@@ -21,6 +21,7 @@ import {
   Plus,
   Edit,
   AlertTriangle,
+  Truck,
 } from "lucide-react";
 
 type Product = {
@@ -118,6 +119,7 @@ type Stats = {
   totalRevenue: number;
   pendingOrders: number;
   outOfStockProducts: number;
+  activeDeliveries: number;
 };
 
 export const Route = createFileRoute("/admin")({
@@ -216,11 +218,12 @@ function AdminPanel() {
         .filter((o: { status: string }) => o.status === "paid" || o.status === "delivered")
         .reduce((s: number, o: { total_amount: number }) => s + o.total_amount, 0);
       const pendingOrders = (orderRes.data ?? []).filter(
+        (o: { status: string }) => o.status === "pending",
+      ).length;
+
+      const activeDeliveries = (orderRes.data ?? []).filter(
         (o: { status: string }) =>
-          o.status === "pending" ||
-          o.status === "paid" ||
-          o.status === "processing" ||
-          o.status === "shipped",
+          o.status === "paid" || o.status === "processing" || o.status === "shipped",
       ).length;
 
       setStats({
@@ -230,6 +233,7 @@ function AdminPanel() {
         totalRevenue,
         pendingOrders,
         outOfStockProducts,
+        activeDeliveries,
       });
 
       if (tab === "products") {
@@ -663,7 +667,7 @@ function AdminPanel() {
         </div>
 
         {/* Stats Row */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-6 mb-10">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7 mb-10">
           {[
             {
               label: "Total Products",
@@ -694,6 +698,12 @@ function AdminPanel() {
               value: stats.pendingOrders,
               icon: Activity,
               color: "var(--burgundy)",
+            },
+            {
+              label: "Active Deliveries",
+              value: stats.activeDeliveries,
+              icon: Truck,
+              color: "oklch(0.53 0.17 195)",
             },
             {
               label: "Out of Stock",
