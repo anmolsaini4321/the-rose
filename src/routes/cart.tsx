@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { supabase } from "@/integrations/supabase/client";
@@ -94,13 +94,13 @@ function Cart() {
   const [rzpLoaded, setRzpLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const refreshCart = async () => {
+  const refreshCart = useCallback(async () => {
     const authOK = await requireAuth(navigate);
     if (!authOK) return;
     const items = await getCart();
     setItems(items);
     setLoading(false);
-  };
+  }, [navigate]);
 
   useEffect(() => {
     refreshCart();
@@ -117,7 +117,7 @@ function Cart() {
     };
     window.addEventListener("cart-updated", handler);
     return () => window.removeEventListener("cart-updated", handler);
-  }, []);
+  }, [refreshCart]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -235,7 +235,12 @@ function Cart() {
       if (!orderErr && rpcData) {
         if (typeof rpcData === "string") {
           orderId = rpcData;
-          totalAmount = computedTotal;
+          const { data: orderData } = await supabase
+            .from("orders")
+            .select("total_amount")
+            .eq("id", orderId)
+            .single();
+          totalAmount = orderData ? Number(orderData.total_amount) : computedTotal;
         } else if (typeof rpcData === "object") {
           orderId = (rpcData as any).id || (rpcData as any).order_id || null;
           totalAmount = Number((rpcData as any).total_amount) || computedTotal;
@@ -329,35 +334,21 @@ function Cart() {
             if (!verifyErr) {
               isUpdated = true;
             } else {
-              console.warn("verify_payment RPC returned error, trying direct update fallback:", verifyErr.message);
+              console.error("verify_payment RPC returned error:", verifyErr.message);
+              toast.error("Payment verification failed: " + verifyErr.message);
             }
-          } catch (rpcErr) {
-            console.warn("verify_payment RPC exception:", rpcErr);
+          } catch (rpcErr: any) {
+            console.error("verify_payment RPC exception:", rpcErr);
+            toast.error("An error occurred during payment verification.");
           }
 
-          // 2. Fallback to direct table status update if RPC didn't mark as paid
-          if (!isUpdated) {
-            const { error: updateErr } = await supabase
-              .from("orders")
-              .update({
-                status: "paid" as any,
-                razorpay_order_id: response.razorpay_order_id || orderId,
-                razorpay_payment_id: response.razorpay_payment_id || "pay_success",
-                razorpay_signature: response.razorpay_signature || "test_signature",
-                updated_at: new Date().toISOString(),
-              })
-              .eq("id", orderId);
-
-            if (updateErr) {
-              console.error("Direct payment status update fallback error:", updateErr.message);
-            } else {
-              isUpdated = true;
-            }
+          if (isUpdated) {
+            clearCart();
+            toast.success("Payment successful! Your order has been placed.");
+            navigate({ to: "/orders" });
+          } else {
+            setProcessing(false);
           }
-
-          clearCart();
-          toast.success("Payment successful! Your order has been placed.");
-          navigate({ to: "/orders" });
         },
         modal: {
           ondismiss: async () => {

@@ -178,8 +178,11 @@ const FALLBACK_PRODUCTS: Product[] = [
     title: "Golden Hour Bloom",
     category: "Seasonal",
     price: 2499,
-    thumbnail: "https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=800&q=80",
-    images: ["https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=800&q=80"],
+    thumbnail:
+      "https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=800&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=800&q=80",
+    ],
     short_description: "Sun-drenched yellow roses & fresh wild blooms",
   },
 ];
@@ -202,10 +205,7 @@ function selectThreeBouquets(allProducts: Product[]): {
   const todaysSpecial = pool[specialIndex];
 
   if (pool.length <= 3) {
-    const reorderedPool = [
-      todaysSpecial,
-      ...pool.filter((p) => p.id !== todaysSpecial.id),
-    ];
+    const reorderedPool = [todaysSpecial, ...pool.filter((p) => p.id !== todaysSpecial.id)];
     return {
       products: reorderedPool,
       todaysSpecialId: todaysSpecial.id,
@@ -239,7 +239,8 @@ function Home() {
         .select("id,title,category,price,thumbnail,images,short_description")
         .eq("is_published", true);
 
-      const productsList = data && data.length > 0 ? (data as unknown as Product[]) : FALLBACK_PRODUCTS;
+      const productsList =
+        data && data.length > 0 ? (data as unknown as Product[]) : FALLBACK_PRODUCTS;
       const { products, todaysSpecialId: specialId } = selectThreeBouquets(productsList);
       setCollectionProducts(products);
       setTodaysSpecialId(specialId);
@@ -458,7 +459,9 @@ function Home() {
                         </div>
                         <div className="mt-2 flex items-baseline justify-between">
                           <div className="flex items-center gap-2">
-                            <p className="text-sm opacity-70">{p.short_description || p.category}</p>
+                            <p className="text-sm opacity-70">
+                              {p.short_description || p.category}
+                            </p>
                             {p.id === todaysSpecialId && (
                               <span className="text-[10px] uppercase font-semibold tracking-wider text-forest bg-gold/30 px-2 py-0.5 rounded">
                                 Special Choice
@@ -576,7 +579,8 @@ function Home() {
               {
                 title: "Birthday",
                 subtitle: "A year, honored",
-                image: "https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=800&q=80",
+                image:
+                  "https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=800&q=80",
               },
               {
                 title: "Anniversary",
@@ -586,12 +590,14 @@ function Home() {
               {
                 title: "Mother's Day",
                 subtitle: "For the first love",
-                image: "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?auto=format&fit=crop&w=800&q=80",
+                image:
+                  "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?auto=format&fit=crop&w=800&q=80",
               },
               {
                 title: "Congratulations",
                 subtitle: "The moment marked",
-                image: "https://images.unsplash.com/photo-1562690868-60bbe7293e94?auto=format&fit=crop&w=800&q=80",
+                image:
+                  "https://images.unsplash.com/photo-1562690868-60bbe7293e94?auto=format&fit=crop&w=800&q=80",
               },
               {
                 title: "Corporate",

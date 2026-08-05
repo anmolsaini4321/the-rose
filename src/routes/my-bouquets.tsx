@@ -63,7 +63,9 @@ function MyBouquets() {
     try {
       const localSaved = JSON.parse(localStorage.getItem("rose_local_bouquets") || "[]");
       userLocal = localSaved.filter((b: any) => b.user_id === u.user.id);
-    } catch {}
+    } catch (e) {
+      // Ignore local storage parse error
+    }
 
     const combined = [...userLocal, ...remoteItems].filter(
       (v, i, a) => a.findIndex((t) => t.id === v.id) === i,
@@ -84,7 +86,9 @@ function MyBouquets() {
         toast.success("Removed from Atelier");
         load();
         return;
-      } catch {}
+      } catch (e) {
+        // Ignore local storage error
+      }
     }
 
     const { error } = await supabase.from("bouquets").delete().eq("id", id);
@@ -107,7 +111,9 @@ function MyBouquets() {
         toast.success(b.is_public ? "Set to Private" : "Published to Public Gallery");
         load();
         return;
-      } catch {}
+      } catch (e) {
+        // Ignore local storage error
+      }
     }
 
     const { error } = await supabase

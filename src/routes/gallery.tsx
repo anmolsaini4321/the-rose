@@ -73,7 +73,9 @@ function Gallery() {
         localStorage.getItem("rose_creator_profiles") || "{}",
       );
       setCreatorProfiles(storedCreators);
-    } catch {}
+    } catch (e) {
+      // Ignore local storage parse error
+    }
 
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
@@ -93,7 +95,9 @@ function Gallery() {
           storedCreators[data.user.id] = uName;
           localStorage.setItem("rose_creator_profiles", JSON.stringify(storedCreators));
           setCreatorProfiles(storedCreators);
-        } catch {}
+        } catch (e) {
+          // Ignore local storage error
+        }
 
         // Load strictly user-scoped likes
         try {
@@ -101,7 +105,9 @@ function Gallery() {
             localStorage.getItem(`rose_user_likes_${data.user.id}`) || "[]",
           );
           setLiked(new Set(userLikes));
-        } catch {}
+        } catch (e) {
+          // Ignore local storage error
+        }
       } else {
         setUser(null);
         setLiked(new Set()); // Unauthenticated guest: empty liked set!
@@ -126,7 +132,9 @@ function Gallery() {
       try {
         const localSaved = JSON.parse(localStorage.getItem("rose_local_bouquets") || "[]");
         publicLocal = localSaved.filter((b: any) => b.is_public);
-      } catch {}
+      } catch (e) {
+        // Ignore local storage error
+      }
 
       const combined = [...publicLocal, ...remoteItems].filter(
         (v, i, a) => a.findIndex((t) => t.id === v.id) === i,
@@ -141,7 +149,9 @@ function Gallery() {
         Object.entries(allLocalLikers).forEach(([bId, list]) => {
           likesCountMap[bId] = list.length;
         });
-      } catch {}
+      } catch (e) {
+        // Ignore local storage error
+      }
 
       const updatedCombined = combined.map((item) => ({
         ...item,
@@ -167,7 +177,9 @@ function Gallery() {
             data.forEach((r: { bouquet_id: string }) => next.add(r.bouquet_id));
             try {
               localStorage.setItem(`rose_user_likes_${user.id}`, JSON.stringify(Array.from(next)));
-            } catch {}
+            } catch (e) {
+              // Ignore local storage error
+            }
             return next;
           });
         }
@@ -214,7 +226,9 @@ function Gallery() {
       // Update bouquet likes_count in UI state
       const newCount = allLocalLikers[b.id].length;
       setItems((its) => its.map((x) => (x.id === b.id ? { ...x, likes_count: newCount } : x)));
-    } catch {}
+    } catch (e) {
+      // Ignore local storage error
+    }
 
     // Try remote database update quietly
     try {
@@ -223,7 +237,9 @@ function Gallery() {
       } else {
         await supabase.from("bouquet_likes").insert({ bouquet_id: b.id, user_id: user.id });
       }
-    } catch {}
+    } catch (e) {
+      // Ignore remote error
+    }
   };
 
   const openAdmirers = (b: Bouquet, e: React.MouseEvent) => {
@@ -236,7 +252,9 @@ function Gallery() {
         localStorage.getItem("rose_local_bouquet_likers") || "{}",
       );
       list = allLocalLikers[b.id] || [];
-    } catch {}
+    } catch (e) {
+      // Ignore local storage error
+    }
 
     if (list.length === 0 && b.likes_count > 0) {
       list = [

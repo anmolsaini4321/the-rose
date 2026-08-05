@@ -50,7 +50,9 @@ function Builder() {
       if (saved) {
         try {
           return JSON.parse(saved);
-        } catch {}
+        } catch (e) {
+          // Ignore corruption and fallback to default config
+        }
       }
     }
     return DEFAULT_CONFIG;

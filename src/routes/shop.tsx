@@ -78,6 +78,7 @@ function Shop() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [sortBy, setSortBy] = useState<"newest" | "price_asc" | "price_desc" | "rating">("newest");
   const [showFilters, setShowFilters] = useState(false);
+  const [realtimeTrigger, setRealtimeTrigger] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -101,7 +102,19 @@ function Shop() {
       setProducts((data as unknown as Product[]) ?? []);
       setLoading(false);
     })();
-  }, [activeCategory, sortBy]);
+  }, [activeCategory, sortBy, realtimeTrigger]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("shop-products-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => {
+        setRealtimeTrigger((t) => t + 1);
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const handleQuickAdd = async (p: Product) => {
     // Validate stock availability
@@ -355,7 +368,7 @@ function FeaturedCard({
           className="w-full btn-royal btn-royal-hover disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <ShoppingBag size={14} />
-          {p.stock_count === 0 ? "Out of Stock" : "Add to Bag"}
+          {p.stock_count === 0 ? "Coming Soon" : "Add to Bag"}
         </button>
       </div>
     </article>
@@ -387,8 +400,13 @@ function ProductCard({
             <PlaceholderBloom />
           )}
           {p.stock_count === 0 && (
-            <div className="absolute inset-0 bg-cream/70 flex items-center justify-center">
-              <span className="text-eyebrow">Out of Stock</span>
+            <div className="absolute inset-0 bg-cream/80 flex flex-col items-center justify-center p-4">
+              <span className="text-eyebrow text-burgundy font-semibold text-center uppercase tracking-widest text-xs">
+                Out of Stock
+              </span>
+              <span className="text-[10px] uppercase tracking-widest opacity-60 mt-1">
+                Coming Soon
+              </span>
             </div>
           )}
         </div>
@@ -417,7 +435,7 @@ function ProductCard({
           className="w-full btn-royal btn-royal-hover text-sm disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <ShoppingBag size={12} />
-          {p.stock_count === 0 ? "Sold Out" : "Add to Bag"}
+          {p.stock_count === 0 ? "Coming Soon" : "Add to Bag"}
         </button>
       </div>
     </article>

@@ -56,6 +56,8 @@ function ProductDetail() {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
   }, []);
 
+  const [realtimeTrigger, setRealtimeTrigger] = useState(0);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -105,7 +107,29 @@ function ProductDetail() {
       }
       setLoading(false);
     })();
-  }, [productId, navigate]);
+  }, [productId, navigate, realtimeTrigger]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`shop-product-detail-realtime-${productId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "products" },
+        (payload) => {
+          if (
+            payload.new.id === productId ||
+            payload.new.slug === productId ||
+            (product && payload.new.id === product.id)
+          ) {
+            setRealtimeTrigger((t) => t + 1);
+          }
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [productId, product?.id]);
 
   useEffect(() => {
     if (!userId) return;
@@ -306,7 +330,7 @@ function ProductDetail() {
               {product.stock_count <= 0 ? (
                 <div className="inline-flex items-center gap-2.5 px-3 py-1.5 border border-burgundy/40 bg-burgundy/5 text-burgundy text-eyebrow text-xs tracking-widest">
                   <span className="w-1.5 h-1.5 rounded-full bg-burgundy" />
-                  <span>Out of Stock — Currently Unavailable</span>
+                  <span>Out of Stock, Coming Soon</span>
                 </div>
               ) : product.stock_count === 1 ? (
                 <div className="inline-flex items-center gap-2.5 px-3 py-1.5 border border-[var(--gold)] bg-amber-500/10 text-amber-950 text-eyebrow text-xs tracking-widest">
@@ -360,7 +384,7 @@ function ProductDetail() {
                 className="flex-1 btn-royal btn-royal-hover disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <ShoppingBag size={14} />
-                {product.stock_count === 0 ? "Out of Stock" : "Add to Bag"}
+                {product.stock_count === 0 ? "Coming Soon" : "Add to Bag"}
               </button>
             </div>
 

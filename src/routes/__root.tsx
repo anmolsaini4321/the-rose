@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { FloatingActions } from "@/components/SiteNav";
+import { ActiveOrderTracker } from "@/components/ActiveOrderTracker";
 
 function NotFoundComponent() {
   return (
@@ -198,6 +199,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <Outlet />
       <FloatingActions />
+      <ActiveOrderTracker />
       <Toaster richColors position="top-center" />
     </QueryClientProvider>
   );

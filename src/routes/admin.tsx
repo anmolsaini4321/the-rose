@@ -20,17 +20,23 @@ import {
   Loader2,
   Plus,
   Edit,
+  AlertTriangle,
 } from "lucide-react";
 
 type Product = {
   id: string;
   title: string;
+  slug: string;
+  description: string;
+  short_description: string | null;
   price: number;
+  original_price: number | null;
+  category: string;
   is_published: boolean;
   stock_count: number;
   created_at: string;
   review_count: number;
-  profiles?: { display_name: string | null } | null;
+  is_featured?: boolean;
 };
 
 type OrderItem = {
@@ -53,6 +59,8 @@ type Order = {
   notes: string | null;
   profiles?: { display_name: string | null } | null;
   order_items?: OrderItem[];
+  delivery_partner?: string | null;
+  delivery_eta?: string | null;
 };
 
 type Review = {
@@ -78,6 +86,7 @@ type Stats = {
   totalOrders: number;
   totalRevenue: number;
   pendingOrders: number;
+  outOfStockProducts: number;
 };
 
 export const Route = createFileRoute("/admin")({
@@ -104,6 +113,30 @@ function AdminPanel() {
   const [loading, setLoading] = useState(false);
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+  // Editing product CRUD state
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editForm, setEditForm] = useState<{
+    title: string;
+    description: string;
+    short_description: string;
+    price: string;
+    original_price: string;
+    category: string;
+    stock_count: string;
+    is_published: boolean;
+    is_featured: boolean;
+  }>({
+    title: "",
+    description: "",
+    short_description: "",
+    price: "",
+    original_price: "",
+    category: "Bouquet",
+    stock_count: "0",
+    is_published: true,
+    is_featured: false,
+  });
 
   // Auth gate
   useEffect(() => {
@@ -138,32 +171,42 @@ function AdminPanel() {
     try {
       // Stats
       const [prodRes, orderRes] = await Promise.all([
-        supabase.from("products").select("id,is_published", { count: "exact", head: true }),
-        supabase.from("orders").select("id,status,total_amount", { count: "exact" }),
+        supabase.from("products").select("id,is_published,stock_count"),
+        supabase.from("orders").select("id,status,total_amount"),
       ]);
 
-      const totalProducts = prodRes.count ?? 0;
-      const publishedProducts =
-        (
-          await supabase
-            .from("products")
-            .select("id", { count: "exact", head: true })
-            .eq("is_published", true)
-        ).count ?? 0;
-      const totalOrders = orderRes.count ?? 0;
+      const totalProducts = prodRes.data?.length ?? 0;
+      const publishedProducts = (prodRes.data ?? []).filter((p: any) => p.is_published).length;
+      const outOfStockProducts = (prodRes.data ?? []).filter(
+        (p: any) => p.stock_count === 0,
+      ).length;
+      const totalOrders = orderRes.data?.length ?? 0;
       const totalRevenue = (orderRes.data ?? [])
         .filter((o: { status: string }) => o.status === "paid" || o.status === "delivered")
         .reduce((s: number, o: { total_amount: number }) => s + o.total_amount, 0);
       const pendingOrders = (orderRes.data ?? []).filter(
-        (o: { status: string }) => o.status === "pending" || o.status === "paid",
+        (o: { status: string }) =>
+          o.status === "pending" ||
+          o.status === "paid" ||
+          o.status === "processing" ||
+          o.status === "shipped",
       ).length;
 
-      setStats({ totalProducts, publishedProducts, totalOrders, totalRevenue, pendingOrders });
+      setStats({
+        totalProducts,
+        publishedProducts,
+        totalOrders,
+        totalRevenue,
+        pendingOrders,
+        outOfStockProducts,
+      });
 
       if (tab === "products") {
         const { data } = await supabase
           .from("products")
-          .select("id,title,price,is_published,stock_count,created_at,review_count")
+          .select(
+            "id,title,slug,description,short_description,price,original_price,is_published,stock_count,created_at,review_count,category,is_featured",
+          )
           .order("created_at", { ascending: false })
           .limit(50);
         setProducts((data as unknown as Product[]) ?? []);
@@ -183,6 +226,8 @@ function AdminPanel() {
             shipping_city,
             shipping_pincode,
             notes,
+            delivery_partner,
+            delivery_eta,
             order_items(
               id,
               quantity,
@@ -350,28 +395,93 @@ function AdminPanel() {
     }
   };
 
+  // Product edit start handler
+  const startEditing = (p: Product) => {
+    setEditingProduct(p);
+    setEditForm({
+      title: p.title || "",
+      description: p.description || "",
+      short_description: p.short_description || "",
+      price: String(p.price || 0),
+      original_price: p.original_price ? String(p.original_price) : "",
+      category: p.category || "Bouquet",
+      stock_count: String(p.stock_count || 0),
+      is_published: p.is_published,
+      is_featured: p.is_featured || false,
+    });
+  };
+
+  // Product edit submit handler
+  const handleUpdateProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+    if (!editForm.title.trim()) {
+      toast.error("Product title is required");
+      return;
+    }
+    const priceNum = Number(editForm.price);
+    if (isNaN(priceNum) || priceNum <= 0) {
+      toast.error("Please enter a valid price");
+      return;
+    }
+    const stockNum = parseInt(editForm.stock_count, 10);
+    if (isNaN(stockNum) || stockNum < 0) {
+      toast.error("Please enter a valid stock count");
+      return;
+    }
+
+    const updates = {
+      title: editForm.title.trim(),
+      description: editForm.description.trim(),
+      short_description: editForm.short_description.trim() || null,
+      price: priceNum,
+      original_price: editForm.original_price.trim() ? Number(editForm.original_price) : null,
+      category: editForm.category,
+      stock_count: stockNum,
+      is_published: editForm.is_published,
+      is_featured: editForm.is_featured,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = await supabase.from("products").update(updates).eq("id", editingProduct.id);
+
+    if (error) {
+      toast.error("Failed to update product: " + error.message);
+      return;
+    }
+
+    toast.success("Product updated successfully");
+    setEditingProduct(null);
+    loadData();
+  };
+
+  const [realtimeTrigger, setRealtimeTrigger] = useState(0);
+
   // Initial load and tab changes
   useEffect(() => {
     if (isSuperAdmin) {
       loadData();
     }
-  }, [isSuperAdmin, tab]);
+  }, [isSuperAdmin, tab, realtimeTrigger]);
 
   // Realtime postgres changes subscription
   useEffect(() => {
     if (!isSuperAdmin) return;
 
     const channel = supabase
-      .channel("realtime-admin-orders")
+      .channel("realtime-admin-changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
-        loadData();
+        setRealtimeTrigger((t) => t + 1);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => {
+        setRealtimeTrigger((t) => t + 1);
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [isSuperAdmin, tab, selectedOrder?.id]);
+  }, [isSuperAdmin]);
 
   const toggleProductPublish = async (p: Product) => {
     const { error } = await supabase
@@ -521,7 +631,7 @@ function AdminPanel() {
         </div>
 
         {/* Stats Row */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5 mb-10">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-6 mb-10">
           {[
             {
               label: "Total Products",
@@ -552,6 +662,12 @@ function AdminPanel() {
               value: stats.pendingOrders,
               icon: Activity,
               color: "var(--burgundy)",
+            },
+            {
+              label: "Out of Stock",
+              value: stats.outOfStockProducts,
+              icon: AlertTriangle,
+              color: "oklch(0.58 0.23 28)",
             },
           ].map((s, i) => (
             <div key={i} className="bg-ivory border border-border p-6">
@@ -654,7 +770,15 @@ function AdminPanel() {
                         </p>
                       </td>
                       <td className="p-4">₹{Number(p.price).toLocaleString("en-IN")}</td>
-                      <td className="p-4">{p.stock_count}</td>
+                      <td className="p-4">
+                        {p.stock_count === 0 ? (
+                          <span className="inline-flex items-center gap-1 text-red-600 font-semibold bg-red-50 border border-red-200 px-2 py-0.5 text-xs rounded">
+                            <AlertTriangle size={10} /> Out of Stock
+                          </span>
+                        ) : (
+                          <span>{p.stock_count} units</span>
+                        )}
+                      </td>
                       <td className="p-4">{p.review_count}</td>
                       <td className="p-4">
                         <span
@@ -670,6 +794,13 @@ function AdminPanel() {
                       </td>
                       <td className="p-4">
                         <div className="flex gap-2">
+                          <button
+                            onClick={() => startEditing(p)}
+                            className="opacity-60 hover:opacity-100"
+                            title="Edit"
+                          >
+                            <Edit size={16} />
+                          </button>
                           <button
                             onClick={() => toggleProductPublish(p)}
                             className="opacity-60 hover:opacity-100"
@@ -707,6 +838,7 @@ function AdminPanel() {
                     <th className="p-4">Order ID</th>
                     <th className="p-4">Customer</th>
                     <th className="p-4">Amount</th>
+                    <th className="p-4">Delivery Courier</th>
                     <th className="p-4">Status</th>
                     <th className="p-4">Date</th>
                     <th className="p-4">Actions</th>
@@ -730,6 +862,20 @@ function AdminPanel() {
                         ₹{Number(o.total_amount).toLocaleString("en-IN")}
                       </td>
                       <td className="p-4">
+                        {o.delivery_partner ? (
+                          <div>
+                            <p className="font-semibold text-xs opacity-90">{o.delivery_partner}</p>
+                            {o.delivery_eta && (
+                              <p className="text-[10px] opacity-50 mt-0.5">
+                                ETA: {new Date(o.delivery_eta).toLocaleDateString("en-IN")}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs opacity-40">—</span>
+                        )}
+                      </td>
+                      <td className="p-4">
                         {o.status === "pending" ? (
                           <span className="inline-block text-xs font-semibold px-3 py-1 bg-amber-100 text-amber-900 rounded-full border border-amber-300">
                             Pending Payment
@@ -742,16 +888,15 @@ function AdminPanel() {
                           <select
                             value={o.status}
                             onChange={(e) => updateOrderStatus(o.id, e.target.value)}
-                            className="text-eyebrow px-3 py-1 bg-cream border border-border focus:outline-none focus:border-primary"
+                            className="text-eyebrow px-3 py-1 bg-cream border border-border focus:outline-none focus:border-primary font-semibold"
                           >
-                            {[
-                              o.status,
-                              ...(VALID_STATUS_TRANSITIONS[o.status] || []),
-                            ]
+                            {[o.status, ...(VALID_STATUS_TRANSITIONS[o.status] || [])]
                               .filter((v, idx, arr) => arr.indexOf(v) === idx)
                               .map((s) => (
                                 <option key={s} value={s}>
-                                  {s === "paid" ? "Paid (Gateway Verified)" : s.charAt(0).toUpperCase() + s.slice(1)}
+                                  {s === "paid"
+                                    ? "Paid (Gateway Verified)"
+                                    : s.charAt(0).toUpperCase() + s.slice(1)}
                                 </option>
                               ))}
                           </select>
@@ -929,6 +1074,32 @@ function AdminPanel() {
                         </p>
                       </div>
                     </div>
+
+                    {/* Delivery Logistics */}
+                    <div>
+                      <h4 className="text-xs tracking-widest uppercase opacity-50 font-bold mb-2">
+                        Delivery Logistics
+                      </h4>
+                      <div className="bg-cream/40 p-4 border border-border space-y-2">
+                        <p className="text-sm opacity-90">
+                          <span className="opacity-60 font-semibold">Delivery Partner:</span>{" "}
+                          <span className="font-bold text-ink">
+                            {selectedOrder.delivery_partner || "Unassigned"}
+                          </span>
+                        </p>
+                        {selectedOrder.delivery_eta && (
+                          <p className="text-sm opacity-90">
+                            <span className="opacity-60 font-semibold">Estimated Delivery:</span>{" "}
+                            <span className="font-bold text-ink">
+                              {new Date(selectedOrder.delivery_eta).toLocaleString("en-IN", {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              })}
+                            </span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   {/* WHERE Ordered */}
@@ -1030,6 +1201,183 @@ function AdminPanel() {
                   Close Details
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Product Modal */}
+        {editingProduct && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+            <div
+              className="bg-ivory border border-border w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col"
+              style={{ color: "var(--forest)" }}
+            >
+              {/* Modal Header */}
+              <div className="p-6 border-b border-border flex items-center justify-between">
+                <div>
+                  <span className="text-xs text-primary/60 tracking-widest uppercase font-semibold">
+                    Edit Product
+                  </span>
+                  <h3 className="font-display text-xl mt-1 text-ink">{editingProduct.title}</h3>
+                </div>
+                <button
+                  onClick={() => setEditingProduct(null)}
+                  className="text-eyebrow opacity-60 hover:opacity-100 text-sm cursor-pointer p-2 hover:bg-cream/40"
+                >
+                  ✕ Close
+                </button>
+              </div>
+
+              {/* Modal Body / Form */}
+              <form onSubmit={handleUpdateProduct} className="p-8 space-y-6 flex-1 overflow-y-auto">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs tracking-widest uppercase opacity-60 font-bold block mb-1">
+                      Product Title *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editForm.title}
+                      onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
+                      className="w-full bg-cream/40 border border-border p-3 focus:outline-none focus:border-primary text-sm font-semibold"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs tracking-widest uppercase opacity-60 font-bold block mb-1">
+                        Category *
+                      </label>
+                      <select
+                        value={editForm.category}
+                        onChange={(e) => setEditForm((f) => ({ ...f, category: e.target.value }))}
+                        className="w-full bg-cream/40 border border-border p-3 focus:outline-none focus:border-primary text-sm font-semibold"
+                      >
+                        {["Bouquet", "Wedding", "Hamper", "Forever Rose", "Seasonal"].map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs tracking-widest uppercase opacity-60 font-bold block mb-1">
+                        Stock Count *
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        required
+                        value={editForm.stock_count}
+                        onChange={(e) =>
+                          setEditForm((f) => ({ ...f, stock_count: e.target.value }))
+                        }
+                        className="w-full bg-cream/40 border border-border p-3 focus:outline-none focus:border-primary text-sm font-semibold"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs tracking-widest uppercase opacity-60 font-bold block mb-1">
+                        Price (₹) *
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        required
+                        value={editForm.price}
+                        onChange={(e) => setEditForm((f) => ({ ...f, price: e.target.value }))}
+                        className="w-full bg-cream/40 border border-border p-3 focus:outline-none focus:border-primary text-sm font-semibold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs tracking-widest uppercase opacity-60 font-bold block mb-1">
+                        Original Price (₹ - Optional)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editForm.original_price}
+                        onChange={(e) =>
+                          setEditForm((f) => ({ ...f, original_price: e.target.value }))
+                        }
+                        className="w-full bg-cream/40 border border-border p-3 focus:outline-none focus:border-primary text-sm font-semibold"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs tracking-widest uppercase opacity-60 font-bold block mb-1">
+                      Short Description (1-2 sentences)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={editForm.short_description}
+                      onChange={(e) =>
+                        setEditForm((f) => ({ ...f, short_description: e.target.value }))
+                      }
+                      className="w-full bg-cream/40 border border-border p-3 focus:outline-none focus:border-primary text-sm font-semibold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs tracking-widest uppercase opacity-60 font-bold block mb-1">
+                      Full Description
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={editForm.description}
+                      onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
+                      className="w-full bg-cream/40 border border-border p-3 focus:outline-none focus:border-primary text-sm font-semibold"
+                    />
+                  </div>
+
+                  <div className="flex gap-6 pt-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={editForm.is_published}
+                        onChange={(e) =>
+                          setEditForm((f) => ({ ...f, is_published: e.target.checked }))
+                        }
+                        className="rounded border-border text-forest focus:ring-forest w-4 h-4"
+                      />
+                      <span className="text-sm font-semibold">Publish to Store</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={editForm.is_featured}
+                        onChange={(e) =>
+                          setEditForm((f) => ({ ...f, is_featured: e.target.checked }))
+                        }
+                        className="rounded border-border text-forest focus:ring-forest w-4 h-4"
+                      />
+                      <span className="text-sm font-semibold">Mark as Featured</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Modal Footer Actions */}
+                <div className="pt-6 border-t border-border flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setEditingProduct(null)}
+                    className="btn-royal py-2 px-6 opacity-60 hover:opacity-100"
+                    style={{ background: "transparent", color: "var(--forest)" }}
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn-royal btn-royal-hover py-2 px-6">
+                    Save Changes
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
