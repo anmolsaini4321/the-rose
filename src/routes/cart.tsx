@@ -452,8 +452,20 @@ function Cart() {
                         </button>
                         <span className="w-10 text-center font-display">{item.quantity}</span>
                         <button
-                          onClick={() => updateQty(item.productId, item.quantity + 1)}
-                          className="w-9 h-9 flex items-center justify-center hover:bg-cream"
+                          disabled={item.quantity >= item.stockCount}
+                          onClick={() => {
+                            if (item.quantity >= item.stockCount) {
+                              toast.error(`Only ${item.stockCount} items left in stock`);
+                              return;
+                            }
+                            updateQty(item.productId, item.quantity + 1);
+                          }}
+                          className="w-9 h-9 flex items-center justify-center hover:bg-cream disabled:opacity-30 disabled:cursor-not-allowed"
+                          title={
+                            item.quantity >= item.stockCount
+                              ? `Only ${item.stockCount} left in stock`
+                              : undefined
+                          }
                         >
                           <Plus size={12} />
                         </button>

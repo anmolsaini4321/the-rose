@@ -28,6 +28,7 @@ export type CartItem = {
   thumbnail: string | null;
   price: number;
   quantity: number;
+  stockCount: number;
 };
 
 const CART_TABLE = "carts";
@@ -69,6 +70,7 @@ export async function getCart(): Promise<CartItem[]> {
       thumbnail: item.products?.thumbnail || null,
       price: item.products?.price || 0,
       quantity: item.quantity,
+      stockCount: item.products?.stock_count ?? 99,
     }));
   } catch (e) {
     console.error("Failed to load cart:", e);
