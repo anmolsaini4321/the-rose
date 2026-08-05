@@ -61,6 +61,7 @@ type Order = {
   order_items?: OrderItem[];
   delivery_partner?: string | null;
   delivery_eta?: string | null;
+  delivery_confirmed_by_user?: boolean;
 };
 
 type Review = {
@@ -228,6 +229,7 @@ function AdminPanel() {
             notes,
             delivery_partner,
             delivery_eta,
+            delivery_confirmed_by_user,
             order_items(
               id,
               quantity,
@@ -1098,6 +1100,20 @@ function AdminPanel() {
                             </span>
                           </p>
                         )}
+                        <p className="text-sm opacity-90 flex items-center gap-2 pt-1 border-t border-border/40 mt-1">
+                          <span className="opacity-60 font-semibold text-xs">
+                            Customer Receipt:
+                          </span>{" "}
+                          {selectedOrder.delivery_confirmed_by_user ? (
+                            <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-xs rounded">
+                              ✓ Confirmed Received
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-amber-600 font-semibold bg-amber-50 border border-amber-200 px-2 py-0.5 text-xs rounded animate-pulse">
+                              Pending Confirmation
+                            </span>
+                          )}
+                        </p>
                       </div>
                     </div>
                   </div>

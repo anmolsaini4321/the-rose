@@ -135,7 +135,12 @@ export function ActiveOrderTracker() {
     try {
       const { error } = await supabase
         .from("orders")
-        .update({ status: "delivered", updated_at: new Date().toISOString() })
+        .update({
+          status: "delivered",
+          delivery_eta: null,
+          delivery_confirmed_by_user: true,
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", orderId);
 
       if (error) {
