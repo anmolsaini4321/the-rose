@@ -192,6 +192,35 @@ function Cart() {
     setProcessing(true);
 
     try {
+      // 1. Perform stock availability pre-check
+      const productIds = items.map((i) => i.productId);
+      const { data: productsData, error: stockCheckErr } = await supabase
+        .from("products")
+        .select("id, stock_count, title, is_published")
+        .in("id", productIds);
+
+      if (stockCheckErr || !productsData) {
+        toast.error("Failed to verify stock count. Please try again.");
+        setProcessing(false);
+        return;
+      }
+
+      for (const item of items) {
+        const dbProd = productsData.find((p) => p.id === item.productId);
+        if (!dbProd || !dbProd.is_published) {
+          toast.error(`Product "${item.title}" is no longer available.`);
+          setProcessing(false);
+          return;
+        }
+        if (item.quantity > dbProd.stock_count) {
+          toast.error(
+            `Insufficient stock for "${item.title}". Only ${dbProd.stock_count} units left.`,
+          );
+          setProcessing(false);
+          return;
+        }
+      }
+
       let orderId: string | null = null;
       let totalAmount: number = 0;
 
@@ -322,23 +351,28 @@ function Cart() {
 
           let isUpdated = false;
 
-          // 1. Attempt server-side RPC payment verification
+          // 1. Attempt secure server-side API payment verification
           try {
-            const { error: verifyErr } = await supabase.rpc("verify_payment", {
-              p_order_id: orderId,
-              p_razorpay_order_id: response.razorpay_order_id || orderId,
-              p_razorpay_payment_id: response.razorpay_payment_id || "pay_success",
-              p_razorpay_signature: response.razorpay_signature || "test_signature",
+            const res = await fetch("/api/verify-payment", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                order_id: orderId,
+                razorpay_order_id: response.razorpay_order_id || orderId,
+                razorpay_payment_id: response.razorpay_payment_id || "pay_success",
+                razorpay_signature: response.razorpay_signature || "test_signature",
+              }),
             });
 
-            if (!verifyErr) {
+            if (res.ok) {
               isUpdated = true;
             } else {
-              console.error("verify_payment RPC returned error:", verifyErr.message);
-              toast.error("Payment verification failed: " + verifyErr.message);
+              const errData = await res.json();
+              console.error("verify-payment API returned error:", errData.error);
+              toast.error("Payment verification failed: " + errData.error);
             }
-          } catch (rpcErr: any) {
-            console.error("verify_payment RPC exception:", rpcErr);
+          } catch (apiErr: any) {
+            console.error("verify-payment API exception:", apiErr);
             toast.error("An error occurred during payment verification.");
           }
 
