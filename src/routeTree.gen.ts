@@ -17,6 +17,7 @@ import { Route as CartRouteImport } from './routes/cart'
 import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as MyBouquetsRouteImport } from './routes/my-bouquets'
 import { Route as OrdersRouteImport } from './routes/orders'
+import { Route as QrMenuRouteImport } from './routes/qr-menu'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as UploadRouteImport } from './routes/upload'
 import { Route as ProductProductIdRouteImport } from './routes/product.$productId'
@@ -62,6 +63,11 @@ const OrdersRoute = OrdersRouteImport.update({
   path: '/orders',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QrMenuRoute = QrMenuRouteImport.update({
+  id: '/qr-menu',
+  path: '/qr-menu',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShopRoute = ShopRouteImport.update({
   id: '/shop',
   path: '/shop',
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/gallery': typeof GalleryRoute
   '/my-bouquets': typeof MyBouquetsRoute
   '/orders': typeof OrdersRoute
+  '/qr-menu': typeof QrMenuRoute
   '/shop': typeof ShopRouteWithChildren
   '/upload': typeof UploadRoute
   '/product/$productId': typeof ProductProductIdRoute
@@ -106,6 +113,7 @@ export interface FileRoutesByTo {
   '/gallery': typeof GalleryRoute
   '/my-bouquets': typeof MyBouquetsRoute
   '/orders': typeof OrdersRoute
+  '/qr-menu': typeof QrMenuRoute
   '/shop': typeof ShopRouteWithChildren
   '/upload': typeof UploadRoute
   '/product/$productId': typeof ProductProductIdRoute
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/gallery': typeof GalleryRoute
   '/my-bouquets': typeof MyBouquetsRoute
   '/orders': typeof OrdersRoute
+  '/qr-menu': typeof QrMenuRoute
   '/shop': typeof ShopRouteWithChildren
   '/upload': typeof UploadRoute
   '/product/$productId': typeof ProductProductIdRoute
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/gallery'
     | '/my-bouquets'
     | '/orders'
+    | '/qr-menu'
     | '/shop'
     | '/upload'
     | '/product/$productId'
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/gallery'
     | '/my-bouquets'
     | '/orders'
+    | '/qr-menu'
     | '/shop'
     | '/upload'
     | '/product/$productId'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/gallery'
     | '/my-bouquets'
     | '/orders'
+    | '/qr-menu'
     | '/shop'
     | '/upload'
     | '/product/$productId'
@@ -180,6 +192,7 @@ export interface RootRouteChildren {
   GalleryRoute: typeof GalleryRoute
   MyBouquetsRoute: typeof MyBouquetsRoute
   OrdersRoute: typeof OrdersRoute
+  QrMenuRoute: typeof QrMenuRoute
   ShopRoute: typeof ShopRouteWithChildren
   UploadRoute: typeof UploadRoute
   ProductProductIdRoute: typeof ProductProductIdRoute
@@ -243,6 +256,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrdersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/qr-menu': {
+      id: '/qr-menu'
+      path: '/qr-menu'
+      fullPath: '/qr-menu'
+      preLoaderRoute: typeof QrMenuRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/shop': {
       id: '/shop'
       path: '/shop'
@@ -293,6 +313,7 @@ const rootRouteChildren: RootRouteChildren = {
   GalleryRoute: GalleryRoute,
   MyBouquetsRoute: MyBouquetsRoute,
   OrdersRoute: OrdersRoute,
+  QrMenuRoute: QrMenuRoute,
   ShopRoute: ShopRouteWithChildren,
   UploadRoute: UploadRoute,
   ProductProductIdRoute: ProductProductIdRoute,

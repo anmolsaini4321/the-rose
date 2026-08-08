@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { checkAdminRoute } from "@/lib/auth-guard";
+import CONFIG from "@/lib/config";
+import { QRCodeCanvas } from "qrcode.react";
 import {
   Package,
   ShoppingCart,
@@ -22,6 +24,8 @@ import {
   Edit,
   AlertTriangle,
   Truck,
+  QrCode,
+  Download,
 } from "lucide-react";
 
 type Product = {
@@ -137,7 +141,9 @@ export const Route = createFileRoute("/admin")({
 
 function AdminPanel() {
   const [isSuperAdmin, setIsSuperAdmin] = useState<boolean | null>(null);
-  const [tab, setTab] = useState<"overview" | "products" | "orders" | "reviews">("overview");
+  const [tab, setTab] = useState<"overview" | "products" | "orders" | "reviews" | "qr">("overview");
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
+  const menuUrl = `${CONFIG.appUrl}/qr-menu`;
   const [stats, setStats] = useState<Stats | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -724,7 +730,7 @@ function AdminPanel() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 border-b border-border">
-          {(["overview", "products", "orders", "reviews"] as const).map((t) => (
+          {(["overview", "products", "orders", "reviews", "qr"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -732,7 +738,7 @@ function AdminPanel() {
                 tab === t ? "border-b-2 border-primary opacity-100" : "opacity-50 hover:opacity-80"
               }`}
             >
-              {t.charAt(0).toUpperCase() + t.slice(1)}
+              {t === "qr" ? "QR Menu" : t.charAt(0).toUpperCase() + t.slice(1)}
             </button>
           ))}
         </div>
@@ -1031,6 +1037,51 @@ function AdminPanel() {
                   </section>
                 ))
               )}
+            </div>
+          </div>
+        )}
+        {tab === "qr" && !loading && (
+          <div className="bg-ivory border border-border p-8">
+            <div className="flex items-center gap-3 mb-2">
+              <QrCode size={20} />
+              <h2 className="font-display text-2xl">QR Code — Bouquet Menu</h2>
+            </div>
+            <p className="opacity-60 mb-6 max-w-xl">
+              Print this QR code for in-store or packaging use. Scanning it opens a simple
+              browse-only page of available bouquets — tapping one takes the customer to its full
+              product page on the site.
+            </p>
+
+            <label className="text-eyebrow opacity-60 block mb-2">Menu Page URL</label>
+            <input
+              readOnly
+              value={menuUrl}
+              onFocus={(e) => e.currentTarget.select()}
+              className="w-full max-w-xl bg-cream border border-border p-3 font-display text-sm mb-8 focus:outline-none focus:border-primary"
+            />
+
+            <div className="flex flex-col items-start gap-6">
+              <div className="p-4 bg-white border border-border inline-block">
+                <QRCodeCanvas ref={qrCanvasRef} value={menuUrl} size={256} level="M" />
+              </div>
+              <button
+                onClick={() => {
+                  const canvas = qrCanvasRef.current;
+                  if (!canvas) return;
+                  const url = canvas.toDataURL("image/png");
+                  const link = document.createElement("a");
+                  link.href = url;
+                  link.download = "rose-menu-qr.png";
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  toast.success("QR code downloaded");
+                }}
+                className="btn-royal btn-royal-hover"
+              >
+                <Download size={14} />
+                Download QR
+              </button>
             </div>
           </div>
         )}
